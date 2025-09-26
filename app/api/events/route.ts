@@ -8,6 +8,7 @@ export async function GET() {
     const events = await Event.find().sort({ date: -1 }).lean();
     return NextResponse.json(events);
   } catch (error) {
+    console.error("Error fetching events:", error);
     return NextResponse.json({ error: "Gagal mengambil data event" }, { status: 500 });
   }
 }
@@ -17,6 +18,7 @@ export async function POST(request: Request) {
     await dbConnect();
     const data = await request.json();
 
+    // Validasi field wajib (images sekarang array ID GridFS)
     const requiredFields = ["title", "category", "date", "location", "status", "images"];
     for (const field of requiredFields) {
       if (!data[field]) {
@@ -24,11 +26,18 @@ export async function POST(request: Request) {
       }
     }
 
+    // Validasi images: Harus array string (ID GridFS)
+    if (!Array.isArray(data.images) || !data.images.every((id: string) => typeof id === "string" && id.length > 0)) {
+      return NextResponse.json({ error: "images harus array ID GridFS yang valid" }, { status: 400 });
+    }
+
+    // Simpan event dengan images sebagai array ID
     const event = new Event(data);
     await event.save();
 
     return NextResponse.json(event, { status: 201 });
   } catch (error) {
+    console.error("Error creating event:", error);
     return NextResponse.json({ error: "Gagal membuat event" }, { status: 500 });
   }
 }

@@ -1,45 +1,31 @@
-import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
-import crypto from "crypto";
+export const runtime = "nodejs";
 
-export const POST = async (req: Request) => {
+import { NextRequest, NextResponse } from "next/server";
+import dbConnect from "@/lib/mongoose";
+import { GridFSService } from "@/lib/gridfs";
+
+export async function POST(request: NextRequest) {
   try {
-    const formData = await req.formData();
-    const file = formData.get("file") as File | null;
+    await dbConnect();
+
+    const formData = await request.formData();
+    const file = formData.get("file") as File;
 
     if (!file) {
-      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+      return NextResponse.json({ error: "File tidak ditemukan" }, { status: 400 });
     }
 
-    // Validasi size (max 2MB)
-    if (file.size > 40 * 1024 * 1024) {
-      return NextResponse.json({ error: "File terlalu besar (max 2MB)" }, { status: 400 });
-    }
+    // Konversi file ke Buffer
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const filename = file.name;
+    const contentType = file.type;
 
-    // Validasi type image
-    if (!file.type.startsWith("image/")) {
-      return NextResponse.json({ error: "File harus berupa gambar" }, { status: 400 });
-    }
+    // Upload ke GridFS
+    const fileId = await GridFSService.uploadFile(buffer, filename, contentType);
 
-    // Generate nama unik
-    const ext = path.extname(file.name);
-    const fileName = `${crypto.randomUUID()}${ext}`;
-
-    // Folder upload
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadDir, { recursive: true }); // buat folder jika belum ada
-
-    // Convert ke buffer & simpan
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    await writeFile(path.join(uploadDir, fileName), buffer);
-
-    // Return URL agar bisa langsung digunakan di frontend
-    const fileUrl = `/uploads/${fileName}`;
-    return NextResponse.json({ url: fileUrl });
+    return NextResponse.json({ success: true, fileId, message: "File berhasil diupload" }, { status: 201 });
   } catch (err) {
     console.error("Upload error:", err);
-    return NextResponse.json({ error: "Upload gagal" }, { status: 500 });
+    return NextResponse.json({ error: "Gagal mengupload file" }, { status: 500 });
   }
-};
+}

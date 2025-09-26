@@ -73,6 +73,8 @@ const getStatusStyle = (status: EventStatus): string => {
       return "bg-gray-100 text-gray-800 border-gray-200";
   }
 };
+// Helper function untuk generate URL gambar dari ID
+const getImageUrl = (imageId: string): string => `/api/files/${imageId}`;
 
 // Enhanced Image Gallery Component
 const ImageGallery: React.FC<{
@@ -124,13 +126,24 @@ const ImageGallery: React.FC<{
     <div className="relative">
       {/* Main Image */}
       <div className="relative w-full h-48 sm:h-64 md:h-72 rounded-lg overflow-hidden bg-gray-100">
-        <img
-          src={validImages[currentImageIndex]}
-          alt={`${title} - Gambar ${currentImageIndex + 1}`}
-          className="w-full h-full object-cover"
-          onError={() => handleImageError(currentImageIndex)}
-          loading="lazy"
-        />
+      {images.map((imageId, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentImageIndex(index)}
+              className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-colors ${
+                index === currentImageIndex
+                  ? "border-blue-500"
+                  : "border-gray-200 hover:border-gray-300"
+              }`}
+            >
+              <img
+                src={getImageUrl(imageId)} // Gunakan helper
+                alt={`Thumbnail ${index + 1}`}
+                className="w-full h-full object-cover"
+                onError={() => handleImageError(index)}
+              />
+            </button>
+          ))}
         
         {/* Navigation Arrows */}
         {validImages.length > 1 && (
@@ -209,7 +222,7 @@ const EventCard: React.FC<{
         {images.length > 0 && !imageError ? (
           <>
             <img
-              src={images[0]}
+              src={getImageUrl(images[0])}
               alt={event.title}
               className="w-full h-full object-cover"
               onError={handleImageError}
@@ -572,30 +585,31 @@ const EventModal: React.FC<{
 
                 {/* Image Preview */}
                 {form.images.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">
-                      Gambar Terpilih ({form.images.length})
-                    </h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      {form.images.map((image, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={image}
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-24 object-cover rounded-lg"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => onImageRemove(index)}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
+                      <div className="mt-4">
+                        <h4 className="text-sm font-medium text-gray-700 mb-3">
+                          Gambar Terpilih ({form.images.length})
+                        </h4>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                          {form.images.map((imageId, index) => (
+                            <div key={index} className="relative group">
+                              <img
+                                src={getImageUrl(imageId)} // Gunakan helper
+                                alt={`Preview ${index + 1}`}
+                                className="w-full h-24 object-cover rounded-lg"
+                                onError={() => console.warn(`Failed to load image ${imageId}`)}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => onImageRemove(index)}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                      </div>
+                    )}
               </div>
 
               {/* Submit Buttons */}
@@ -740,52 +754,69 @@ const EventManagement: React.FC = () => {
 
   // Image upload handler
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const files = e.target.files;
-  if (!files) return;
-  setError(null);
-  setUploadingImage(true);
-  try {
-    const uploadedUrls: string[] = [];
-    for (let i = 0; i < Math.min(files.length, 10); i++) {
-      const file = files[i];
-      if (file.size > 5 * 1024 * 1024) {
-        throw new Error(`File ${file.name} terlalu besar (maksimal 5MB)`);
+      const files = e.target.files;
+      if (!files) return;
+      setError(null);
+      setUploadingImage(true);
+      try {
+        const uploadedIds: string[] = [];
+        for (let i = 0; i < Math.min(files.length, 10); i++) {
+          const file = files[i];
+          if (file.size > 5 * 1024 * 1024) {
+            throw new Error(`File ${file.name} terlalu besar (maksimal 5MB)`);
+          }
+          // Prepare form data
+          const formData = new FormData();
+          formData.append("file", file);
+          // Upload to /api/upload
+          const res = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+          });
+          if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.error || "Gagal mengupload gambar");
+          }
+          const data = await res.json();
+          if (!data.id) throw new Error("ID gambar tidak ditemukan dari server");
+          uploadedIds.push(data.id); // Simpan ID, bukan URL
+        }
+        setForm((prev) => ({
+          ...prev,
+          images: [...prev.images, ...uploadedIds],
+        }));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Gagal mengupload gambar");
+      } finally {
+        setUploadingImage(false);
+        if (e.target) e.target.value = ""; // Reset input
       }
-      // Prepare form data
-      const formData = new FormData();
-      formData.append("file", file);
-      // Upload to /api/upload
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || "Gagal mengupload gambar");
+    };
+  
+    // Image remove handler (tambahkan delete dari GridFS)
+    const handleImageRemove = async (index: number) => {
+      const imageId = form.images[index];
+      if (!imageId) return;
+  
+      try {
+        // Opsional: Hapus dari GridFS
+        const res = await fetch(`/api/files/${imageId}`, {
+          method: "DELETE",
+          credentials: 'include', // Jika perlu auth
+        });
+        if (!res.ok) {
+          console.warn("Gagal menghapus gambar dari storage, tetap hapus dari form");
+        }
+      } catch (err) {
+        console.warn("Error deleting image from storage:", err);
       }
-      const data = await res.json();
-      if (!data.url) throw new Error("URL gambar tidak ditemukan dari server");
-      uploadedUrls.push(data.url);
-    }
-    setForm((prev) => ({
-      ...prev,
-      images: [...prev.images, ...uploadedUrls],
-    }));
-  } catch (err) {
-    setError(err instanceof Error ? err.message : "Gagal mengupload gambar");
-  } finally {
-    setUploadingImage(false);
-    if (e.target) e.target.value = ""; // Reset input
-  }
-};
-
-
-  const handleImageRemove = (index: number) => {
-    setForm(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
-  };
+  
+      // Hapus dari form
+      setForm(prev => ({
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index)
+      }));
+    };
 
   // Submit handler
   const handleSubmit = async () => {

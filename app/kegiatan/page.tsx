@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X as XIcon,
+  Upload,
 } from "lucide-react";
 
 /* =========================
@@ -108,6 +109,7 @@ const getStatusClass = (status: EventItem["status"]) => {
   }
 };
 
+const getImageUrl = (imageId: string): string => `/api/files/${imageId}`;
 /* =========================
    ImageGallery (for modal) — show original-sized images (object-contain)
    - preserves aspect ratio
@@ -117,9 +119,10 @@ const getStatusClass = (status: EventItem["status"]) => {
 const ImageGallery: React.FC<{
   images: string[];
   title: string;
-  onImageError?: () => void;
-}> = ({ images, title, onImageError }) => {
+}> = ({ images, title }) => {
   const [index, setIndex] = useState(0);
+  const [imgError, setImgError] = useState(false);
+
   const safeImages = Array.isArray(images) && images.length > 0 ? images : ["/images/fallback-image.png"];
 
   const prev = (e?: React.SyntheticEvent) => {
@@ -131,17 +134,27 @@ const ImageGallery: React.FC<{
     setIndex((i) => (i === safeImages.length - 1 ? 0 : i + 1));
   };
 
+  const handleImageError = () => {
+    setImgError(true);
+  };
+
   return (
     <div>
       {/* Image container: preserve original via object-contain, limit max height */}
-      <div className="w-full flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden relative">
-        <img
-          src={safeImages[index]}
-          alt={`${title} (${index + 1}/${safeImages.length})`}
-          onError={() => onImageError?.()}
-          className="max-h-[70vh] w-auto max-w-full object-contain"
-          loading="lazy"
-        />
+      <div className="w-full flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden relative max-h-96">
+        {!imgError ? (
+          <img
+            src={getImageUrl(safeImages[index])} // Fixed: use index, not currentImageIndex
+            alt={`${title} - Gambar ${index + 1}`}
+            className="w-full h-full object-contain"
+            onError={handleImageError}
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gray-300 text-gray-600">
+            Gambar tidak tersedia
+          </div>
+        )}
 
         {safeImages.length > 1 && (
           <>
@@ -179,7 +192,7 @@ const ImageGallery: React.FC<{
               className={`flex-shrink-0 w-20 h-12 rounded-md overflow-hidden border ${i === index ? "ring-2 ring-green-500" : "border-gray-200"} focus:outline-none`}
               aria-label={`Pilih gambar ${i + 1}`}
             >
-              <img src={src} alt={`Thumb ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+              <img src={getImageUrl(src)} alt={`Thumb ${i + 1}`} className="w-full h-full object-cover" loading="lazy" onError={handleImageError} />
             </button>
           ))}
         </div>
@@ -211,6 +224,10 @@ const EventCard: React.FC<{ event: EventItem; onView: () => void }> = ({ event, 
   const statusLabel = getStatusLabel(event.status);
   const statusColor = getStatusClass(event.status);
 
+  const handleImageError = () => {
+    setImgError(true);
+  };
+
   return (
     <article
       onClick={onView}
@@ -223,12 +240,11 @@ const EventCard: React.FC<{ event: EventItem; onView: () => void }> = ({ event, 
       <div className="relative h-48 bg-gray-200 overflow-hidden">
         {!imgError ? (
           <img
-            src={images[imgIndex]}
-            alt={`${event.title} - ${imgIndex + 1}`}
-            className="w-full h-full object-cover transition-transform duration-500 ease-in-out hover:scale-105"
+            src={getImageUrl(images[imgIndex])} // Fixed: use imgIndex
+            alt={event.title}
+            className="w-full h-full object-cover"
+            onError={handleImageError}
             loading="lazy"
-            decoding="async"
-            onError={() => setImgError(true)}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-300 text-gray-600">
@@ -306,7 +322,6 @@ const Event: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
 
-  // Fetch entries (unchanged logic)
   const fetchEvents = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -360,10 +375,6 @@ const Event: React.FC = () => {
     { value: "ongoing", label: "Sedang Berlangsung" },
     { value: "completed", label: "Selesai" },
   ];
-
-  const handleImageError = () => {
-    // placeholder: analytics or fallback handling if needed
-  };
 
   const closeModal = () => setSelectedEvent(null);
 
@@ -456,7 +467,7 @@ const Event: React.FC = () => {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modal for Event Details */}
       {selectedEvent && (
         <div
           className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
@@ -481,7 +492,7 @@ const Event: React.FC = () => {
             </header>
 
             <div className="p-6 space-y-6">
-              <ImageGallery images={selectedEvent.images} title={selectedEvent.title} onImageError={handleImageError} />
+              <ImageGallery images={selectedEvent.images} title={selectedEvent.title} />
 
               <div className="space-y-4">
                 <div className="flex items-center gap-3 flex-wrap">

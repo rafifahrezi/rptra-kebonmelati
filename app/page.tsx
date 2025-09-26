@@ -30,6 +30,21 @@ interface HeroSlide {
   subtitle: string;
 }
 
+interface EventItem {
+  _id: number;
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  location: string;
+  category: string;
+  participants: number;
+  maxParticipants: number;
+  images: string[];
+  status: "upcoming" | "ongoing" | "completed";
+}
+
+
 // StatsCard Component
 const StatsCard = memo(({ title, value, color = 'green' }: { title: string; value: number; color?: string }) => {
   const colorClasses = {
@@ -134,7 +149,6 @@ const RptraStatusSection = memo(({ rptraStatus, formatDateOnly }: { rptraStatus:
           </span>
           <div className="text-sm text-gray-600 mt-1 flex flex-col sm:flex-row gap-2 justify-center items-center">
             <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {formatDateOnly(rptraStatus.updatedAt)}</span>
-            <span>oleh {rptraStatus.updatedBy}</span>
           </div>
         </div>
       )}
@@ -251,15 +265,20 @@ const LocationSection = memo(() => (
                 </div>
               </div>
               <div className="text-sm text-gray-500">
-                <p>Buka setiap hari: 06:00 - 22:00 WIB</p>
                 <p>Akses transportasi umum tersedia</p>
               </div>
             </div>
           </div>
-          <div className="h-64 bg-gray-300 rounded-lg overflow-hidden">
-            <div className="w-full h-full bg-gradient-to-br from-green-200 to-blue-200 flex items-center justify-center">
-              <p className="text-gray-600">Peta Lokasi RPTRA</p>
-            </div>
+            <div className="mt-6 h-64 bg-gray-300 rounded-lg overflow-hidden">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.479640730367!2d106.8142379!3d-6.2002777!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f6a1a8e9fd37%3A0xfd41c3867e738112!2sRPTRA%20Kebon%20Melati!5e0!3m2!1sid!2sid!4v1755798002460!5m2!1sid!2sid"
+              width="100%"
+              height="100%"
+              className="border-0"
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
           </div>
         </div>
       </div>

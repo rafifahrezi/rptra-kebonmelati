@@ -111,62 +111,88 @@ export default function NewsPage() {
   }
 
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-screen">
+      <section className="py-16 bg-gradient-to-r from-green-600 to-blue-600 text-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6">Berita & Informasi</h1>
+            <p className="text-xl opacity-90 mb-8">Ikuti perkembangan terbaru, program-program baru, dan berbagai informasi penting dari RPTRA Kebon Melati.</p>
+          </div>
+        </div>
+      </section>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center space-y-4 mb-12">
-          <h1 className="text-4xl lg:text-5xl font-bold text-foreground text-balance">
-            Berita & <span className="text-primary">Informasi</span>
-          </h1>
-          <p className="text-lg text-muted-foreground text-pretty max-w-2xl mx-auto">
-            Ikuti perkembangan terbaru, program-program baru, dan berbagai informasi penting dari RPTRA Kebon Melati.
-          </p>
-        </div>
+
 
         {/* Featured News */}
         {featuredNews && (
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold text-foreground mb-6">Berita Utama</h2>
-            <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
-                <div className="aspect-video lg:aspect-square relative">
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-foreground mb-4 my-5">Berita Utama</h2>
+            <Card className="overflow-hidden hover:shadow-sm transition-shadow border-subtle max-w-10xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+                <div className="aspect-video md:aspect-[4/3] relative">
                   <img
                     src={featuredNews.images?.[0] || "/placeholder.svg"}
                     alt={featuredNews.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full ml-5 object-cover transition-transform duration-500 group-hover:scale-105 group-hover:rotate-1"
+                    loading="lazy"
                   />
-                  <div className="absolute top-4 left-4">
-                    <Badge className="bg-primary text-primary-foreground">Berita Utama</Badge>
+                  <div className="absolute top-3 left-3">
+                    <Badge
+                      className="bg-primary/90 text-primary-foreground hover:bg-primary/80 
+            px-2 py-1 rounded-full text-xs font-medium"
+                    >
+                      Berita Utama
+                    </Badge>
                   </div>
                 </div>
-                <div className="p-8 flex flex-col justify-center">
-                  <div className="space-y-4">
-                    <Badge variant="outline">{featuredNews.category || "Tanpa Kategori"}</Badge>
-                    <h3 className="text-2xl lg:text-3xl font-bold text-foreground text-balance">
-                      {featuredNews.title}
-                    </h3>
-                    <p className="text-muted-foreground text-pretty leading-relaxed">{featuredNews.subtitle || featuredNews.content.substring(0, 100) + "..."}</p>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <User className="w-4 h-4" />
-                        <span>{featuredNews.author || "Anonim"}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        <span>{new Date(featuredNews.createdAt).toLocaleDateString("id-ID")}</span>
-                      </div>
+                <div className="p-5 md:p-6 ml-5 flex flex-col justify-center space-y-3">
+                  <Badge
+                    variant="outline"
+                    className="self-start text-xs px-2 py-1 rounded-full"
+                  >
+                    {featuredNews.category || "Tanpa Kategori"}
+                  </Badge>
+                  <h3 className="text-xl md:text-2xl font-bold text-foreground line-clamp-2">
+                    {featuredNews.title}
+                  </h3>
+                  <p className="text-muted-foreground text-sm line-clamp-3 leading-relaxed">
+                    {featuredNews.subtitle || featuredNews.content.substring(0, 150) + "..."}
+                  </p>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2">
+                    <div className="flex items-center gap-1">
+                      <User className="w-3.5 h-3.5 opacity-70" />
+                      <span>{featuredNews.author || "Anonim"}</span>
                     </div>
-                    <Button asChild>
-                      <Link href={`/berita/${featuredNews._id}`}>
-                        Baca Selengkapnya
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Link>
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5 opacity-70" />
+                      <span>
+                        {new Date(featuredNews.createdAt).toLocaleDateString("id-ID", {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </span>
+                    </div>
                   </div>
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="outline"
+                    className="self-start mt-3 group"
+                  >
+                    <Link href={`/berita/${featuredNews._id}`}>
+                      Baca Selengkapnya
+                      <ArrowRight
+                        className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1"
+                      />
+                    </Link>
+                  </Button>
                 </div>
               </div>
             </Card>
           </div>
+
         )}
 
         {/* Filters */}
@@ -235,21 +261,6 @@ export default function NewsPage() {
               </CardContent>
             </Card>
           ))}
-        </div>
-
-        {/* Newsletter Signup */}
-        <div className="text-center space-y-6 py-12 bg-primary text-primary-foreground rounded-2xl">
-          <h2 className="text-2xl lg:text-3xl font-bold text-balance">Dapatkan Berita Terbaru</h2>
-          <p className="opacity-90 text-pretty max-w-xl mx-auto">
-            Berlangganan newsletter kami untuk mendapatkan informasi terbaru tentang kegiatan dan program RPTRA Kebon
-            Melati.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-            <Input placeholder="Masukkan email Anda" className="bg-primary-foreground text-foreground" />
-            <Button variant="secondary" size="lg">
-              Berlangganan
-            </Button>
-          </div>
         </div>
       </div>
     </div>

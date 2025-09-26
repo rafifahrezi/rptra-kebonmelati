@@ -53,29 +53,39 @@ const defaultAboutData = {
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify token
-    const token = request.cookies.get('admin-token')?.value;
-    if (!token) {
-      return NextResponse.json({ message: 'Token tidak ditemukan' }, { status: 401 });
-    }
-    jwt.verify(token, process.env.JWT_SECRET as string);
-
     await connectDB();
+
     let about = await About.findById('main');
+    
     if (!about) {
       about = new About(defaultAboutData);
       await about.save();
     }
-    return NextResponse.json({ about });
+
+    return NextResponse.json({ 
+      success: true,
+      about 
+    }, { 
+      status: 200,
+      headers: {
+        'Cache-Control': 'public, max-age=3600',
+      }
+    });
   } catch (error) {
     console.error('GET about error:', error);
-    return NextResponse.json({ message: 'Terjadi kesalahan server' }, { status: 500 });
+    
+    // Tangani error dengan lebih spesifik
+    return NextResponse.json({ 
+      success: false, 
+      message: error instanceof Error ? error.message : 'Terjadi kesalahan server' 
+    }, { 
+      status: 500 
+    });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify token
     const token = request.cookies.get('admin-token')?.value;
     if (!token) {
       return NextResponse.json({ message: 'Token tidak ditemukan' }, { status: 401 });

@@ -259,13 +259,15 @@ export default function ContactPage() {
             </CardHeader>
             <CardContent>
               <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                <div className="text-center space-y-2">
-                  <MapPin className="w-12 h-12 text-muted-foreground mx-auto" />
-                  <p className="text-muted-foreground">Peta akan ditampilkan di sini</p>
-                  <p className="text-sm text-muted-foreground">
-                    Jl. Kebon Melati No. 123, Jakarta Pusat, DKI Jakarta 10230
-                  </p>
-                </div>
+                <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.479640730367!2d106.8142379!3d-6.2002777!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f6a1a8e9fd37%3A0xfd41c3867e738112!2sRPTRA%20Kebon%20Melati!5e0!3m2!1sid!2sid!4v1755798002460!5m2!1sid!2sid"
+              width="100%"
+              height="100%"
+              className="border-0"
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
               </div>
             </CardContent>
           </Card>

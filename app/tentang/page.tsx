@@ -375,17 +375,13 @@ const About = () => {
     try {
       setLoading(true);
       const response = await fetch("/api/about", {
-        credentials: "include", // Include cookies for token
+        method: "GET",
       });
       if (!response.ok) {
-        const errorText = await response.text();
-        if (response.status === 401) {
-          setError("Akses ditolak: Token tidak ditemukan atau tidak valid");
-        } else {
-          setError(`Gagal memuat data: ${errorText || "Terjadi kesalahan server"}`);
-        }
-        return;
-      }
+      const errorText = await response.text();
+      throw new Error(errorText || "Gagal mengambil data");
+    }
+
       const result = await response.json();
       setAboutData(result.about || null); // Extract 'about' field from API response
     } catch (err) {

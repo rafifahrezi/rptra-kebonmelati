@@ -12,19 +12,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   Search,
   Calendar,
   ImageIcon,
   AlertCircle,
   RefreshCw,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  ZoomIn,
-  Download
+  ArrowRight,
 } from "lucide-react";
+import Link from "next/link";
 
 interface GalleryItem {
   id: number | string;
@@ -36,7 +32,23 @@ interface GalleryItem {
   status: "draft" | "published" | "archived";
 }
 
-// Enhanced Image Component with Error Handling
+const getImageUrl = (id: string): string => {
+  if (!id || id.length === 0) return "/placeholder-image.jpg";
+  return `/api/files/${id}`;
+};
+
+const formatDateForDisplay = (dateString: string | undefined): string => {
+  if (!dateString) return "–";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "–";
+  return date.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+};
+
+// Optimized Image Component
 const GalleryImage: React.FC<{
   src: string;
   alt: string;
@@ -45,7 +57,7 @@ const GalleryImage: React.FC<{
   onError?: () => void;
   onLoad?: () => void;
   loading?: "lazy" | "eager";
-}> = ({ src, alt, title, className, onError, onLoad, loading = "lazy" }) => {
+}> = ({ src, alt, title, className = "", onError, onLoad, loading = "lazy" }) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
 
@@ -65,7 +77,7 @@ const GalleryImage: React.FC<{
       <div className={`bg-gray-100 flex items-center justify-center ${className}`}>
         <div className="text-center p-4">
           <ImageIcon className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-          <p className="text-sm text-gray-500">Gambar tidak dapat dimuat</p>
+          <p className="text-sm text-gray-500">Gambar tidak tersedia</p>
         </div>
       </div>
     );
@@ -74,15 +86,15 @@ const GalleryImage: React.FC<{
   return (
     <div className={`relative ${className}`}>
       {imageLoading && (
-        <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
-          <RefreshCw className="w-6 h-6 text-gray-400 animate-spin" />
-        </div>
+        <div className="absolute inset-0 bg-gray-100 animate-pulse rounded-t-xl" />
       )}
       <img
-        src={src}
+        src={getImageUrl(src)}
         alt={alt}
         title={title}
-        className="w-full h-full object-cover"
+        className={`w-full h-full object-cover transition-opacity duration-300 ${
+          imageLoading ? "opacity-0" : "opacity-100"
+        }`}
         onError={handleError}
         onLoad={handleLoad}
         loading={loading}
@@ -91,288 +103,66 @@ const GalleryImage: React.FC<{
   );
 };
 
-// Enhanced Gallery Card Component
-const GalleryCard: React.FC<{
-  item: GalleryItem;
-  onClick: () => void;
-}> = ({ item, onClick }) => {
+// Gallery Card
+const GalleryCard: React.FC<{ item: GalleryItem }> = ({ item }) => {
   const primaryImage = item.images?.[0];
   const hasMultipleImages = item.images?.length > 1;
 
   return (
-    <Card
-      className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 group focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2"
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onClick();
-        }
-      }}
-      tabIndex={0}
-      role="button"
-      aria-label={`Buka galeri ${item.title}`}
-    >
+    <Card className="overflow-hidden group cursor-pointer rounded-xl border border-gray-200 shadow-sm hover:shadow-lg transition-shadow duration-300">
       <div className="aspect-square relative">
         {primaryImage ? (
           <GalleryImage
             src={primaryImage}
             alt={item.title}
             title={item.title}
-            className="w-full h-full group-hover:scale-105 transition-transform duration-300"
+            className="rounded-t-xl"
           />
         ) : (
-          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+          <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-t-xl">
             <ImageIcon className="w-12 h-12 text-gray-400" />
           </div>
         )}
 
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
-
         {/* Badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
-          <Badge variant="secondary" className="bg-white/90 text-gray-900 shadow-sm">
+        <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
+          <Badge variant="secondary" className="bg-white/90 text-gray-900 shadow-sm rounded-full px-3 py-1 text-xs font-medium">
             {item.category}
           </Badge>
-          {item.status !== 'published' && (
+          {item.status !== "published" && (
             <Badge
-              variant={item.status === 'draft' ? 'default' : 'secondary'}
-              className="capitalize shadow-sm"
+              variant={item.status === "draft" ? "outline" : "secondary"}
+              className="capitalize shadow-sm rounded-full px-3 py-1 text-xs font-medium"
             >
               {item.status}
             </Badge>
           )}
           {hasMultipleImages && (
-            <Badge variant="secondary" className="bg-blue-500 text-white shadow-sm">
-              +{item.images.length - 1} foto
+            <Badge variant="default" className="bg-blue-600 text-white shadow-sm rounded-full px-3 py-1 text-xs font-medium">
+              +{item.images.length - 1}
             </Badge>
           )}
         </div>
 
-        {/* Title Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-          <h3 className="text-white font-semibold text-sm line-clamp-2 drop-shadow-lg">
-            {item.title}
-          </h3>
+        {/* Title Gradient Overlay */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 rounded-b-xl">
+          <h3 className="text-white font-semibold text-sm line-clamp-2">{item.title}</h3>
           <p className="text-white/80 text-xs mt-1 flex items-center gap-1">
             <Calendar className="w-3 h-3" />
-            {new Date(item.date).toLocaleDateString("id-ID")}
+            {formatDateForDisplay(item.date)}
           </p>
         </div>
       </div>
+
+      <div className="p-4">
+        <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium shadow-sm hover:shadow-md transition-shadow rounded-lg">
+          <Link href={`/galeri/${item.id}`}>
+            Lihat Detail
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Link>
+        </Button>
+      </div>
     </Card>
-  );
-};
-
-// Enhanced Modal Component with Image Gallery
-const GalleryModal: React.FC<{
-  item: GalleryItem;
-  isOpen: boolean;
-  onClose: () => void;
-}> = ({ item, isOpen, onClose }) => {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isZoomed, setIsZoomed] = useState(false);
-
-  const currentImage = item.images?.[currentImageIndex];
-  const hasMultipleImages = item.images?.length > 1;
-
-  const goToNext = useCallback(() => {
-    if (hasMultipleImages) {
-      setCurrentImageIndex((prev) => (prev + 1) % item.images.length);
-    }
-  }, [hasMultipleImages, item.images?.length]);
-
-  const goToPrev = useCallback(() => {
-    if (hasMultipleImages) {
-      setCurrentImageIndex((prev) => (prev - 1 + item.images.length) % item.images.length);
-    }
-  }, [hasMultipleImages, item.images?.length]);
-
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (!isOpen) return;
-
-    switch (e.key) {
-      case 'Escape':
-        onClose();
-        break;
-      case 'ArrowLeft':
-        goToPrev();
-        break;
-      case 'ArrowRight':
-        goToNext();
-        break;
-    }
-  }, [isOpen, onClose, goToPrev, goToNext]);
-
-  useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
-
-  const downloadImage = useCallback(() => {
-    if (!currentImage) return;
-
-    const link = document.createElement('a');
-    link.href = currentImage;
-    link.download = `${item.title}-${currentImageIndex + 1}`;
-    link.click();
-  }, [currentImage, item.title, currentImageIndex]);
-
-  if (!isOpen) return null;
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[95vh] p-0 overflow-hidden">
-        <DialogTitle className="sr-only">{item.title}</DialogTitle>
-        <DialogDescription className="sr-only">
-          Galeri foto {item.title} dari kategori {item.category}
-        </DialogDescription>
-
-        <div className="relative bg-black">
-          {/* Close Button */}
-          <Button
-            variant="secondary"
-            size="icon"
-            className="absolute top-4 right-4 z-20 bg-black/50 text-white hover:bg-black/70"
-            onClick={onClose}
-            aria-label="Tutup modal"
-          >
-            <X className="w-4 h-4" />
-          </Button>
-
-          {/* Navigation Buttons */}
-          {hasMultipleImages && (
-            <>
-              <Button
-                variant="secondary"
-                size="icon"
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/50 text-white hover:bg-black/70"
-                onClick={goToPrev}
-                aria-label="Gambar sebelumnya"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="secondary"
-                size="icon"
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/50 text-white hover:bg-black/70"
-                onClick={goToNext}
-                aria-label="Gambar selanjutnya"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </>
-          )}
-
-          {/* Action Buttons */}
-          <div className="absolute top-4 left-4 z-20 flex gap-2">
-            <Button
-              variant="secondary"
-              size="icon"
-              className="bg-black/50 text-white hover:bg-black/70"
-              onClick={() => setIsZoomed(!isZoomed)}
-              aria-label={isZoomed ? "Zoom out" : "Zoom in"}
-            >
-              <ZoomIn className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="secondary"
-              size="icon"
-              className="bg-black/50 text-white hover:bg-black/70"
-              onClick={downloadImage}
-              aria-label="Download gambar"
-            >
-              <Download className="w-4 h-4" />
-            </Button>
-          </div>
-
-          {/* Image Counter */}
-          {hasMultipleImages && (
-            <div className="absolute bottom-4 right-4 z-20 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-              {currentImageIndex + 1} / {item.images.length}
-            </div>
-          )}
-
-          {/* Main Image */}
-          <div className={`relative ${isZoomed ? 'overflow-auto' : 'overflow-hidden'}`}>
-            {currentImage ? (
-              <img
-                src={currentImage}
-                alt={item.title}
-                className={`w-full max-h-[80vh] object-contain transition-transform duration-300 ${isZoomed ? 'scale-150 cursor-move' : 'cursor-zoom-in'
-                  }`}
-                onClick={() => setIsZoomed(!isZoomed)}
-              />
-            ) : (
-              <div className="w-full h-96 bg-gray-100 flex items-center justify-center">
-                <ImageIcon className="w-16 h-16 text-gray-400" />
-              </div>
-            )}
-          </div>
-
-          {/* Thumbnail Strip */}
-          {hasMultipleImages && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20">
-              <div className="flex gap-2 bg-black/50 p-2 rounded-lg max-w-xs overflow-x-auto">
-                {item.images.map((img, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`flex-shrink-0 w-12 h-12 rounded overflow-hidden border-2 transition-colors ${index === currentImageIndex
-                        ? 'border-white'
-                        : 'border-transparent hover:border-gray-300'
-                      }`}
-                    aria-label={`Lihat gambar ${index + 1}`}
-                  >
-                    <img
-                      src={img}
-                      alt={`Thumbnail ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Info Panel */}
-        <div className="p-6 space-y-4 bg-white">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-3 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="outline">{item.category}</Badge>
-                {item.status !== 'published' && (
-                  <Badge variant="secondary" className="capitalize">
-                    {item.status}
-                  </Badge>
-                )}
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900">{item.title}</h2>
-              {item.description && (
-                <p className="text-gray-600 leading-relaxed">{item.description}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between text-sm text-gray-500 pt-4 border-t">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              <span>{new Date(item.date).toLocaleDateString("id-ID", {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}</span>
-            </div>
-            {hasMultipleImages && (
-              <span>{item.images.length} foto dalam galeri ini</span>
-            )}
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 };
 
@@ -382,38 +172,28 @@ export default function GalleryPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fetch gallery data with enhanced error handling
   const fetchGallery = useCallback(async () => {
     setLoading(true);
     setError(null);
-
     try {
       const res = await fetch("/api/gallery", {
-        credentials: 'include',
-        cache: 'no-store'
+        credentials: "include",
+        cache: "no-store",
       });
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: Gagal mengambil data galeri`);
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}: Gagal memuat galeri`);
 
       const data: any[] = await res.json();
-
-      // Ensure images field is always an array and add id
-      const sanitizedData = data.map(item => ({
+      const sanitizedData = data.map((item) => ({
         ...item,
         id: item._id,
-        images: Array.isArray(item.images) ? item.images : []
+        images: Array.isArray(item.images) ? item.images : [],
       }));
-
       setGalleryItems(sanitizedData);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Terjadi kesalahan yang tidak diketahui";
-      setError(errorMessage);
-      console.error('Gallery fetch error:', err);
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan tak terduga");
+      console.error("Fetch error:", err);
     } finally {
       setLoading(false);
     }
@@ -423,107 +203,87 @@ export default function GalleryPage() {
     fetchGallery();
   }, [fetchGallery]);
 
-  // Memoized categories
-  const categories = useMemo(() => [
-    "all",
-    ...Array.from(new Set(galleryItems.map((item) => item.category.toLowerCase()))),
-  ], [galleryItems]);
+  const categories = useMemo(() => {
+    const cats = new Set(galleryItems.map((item) => item.category.toLowerCase()));
+    return ["all", ...Array.from(cats)];
+  }, [galleryItems]);
 
-  // Memoized filtered items
   const filteredItems = useMemo(() => {
     return galleryItems.filter((item) => {
       const matchesCategory =
-        selectedCategory === "all" ||
-        item.category.toLowerCase() === selectedCategory;
-
+        selectedCategory === "all" || item.category.toLowerCase() === selectedCategory;
       const matchesSearch =
-        searchTerm === "" ||
+        !searchTerm ||
         item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.category.toLowerCase().includes(searchTerm.toLowerCase());
-
-      return matchesCategory && matchesSearch && item.status === 'published';
+      return matchesCategory && matchesSearch && item.status === "published";
     });
   }, [galleryItems, selectedCategory, searchTerm]);
 
-  // Modal handlers
-  const openModal = useCallback((item: GalleryItem) => {
-    setSelectedItem(item);
-    setIsModalOpen(true);
-  }, []);
-
-  const closeModal = useCallback(() => {
-    setIsModalOpen(false);
-    setSelectedItem(null);
-  }, []);
-
-  // Reset filters
   const resetFilters = useCallback(() => {
     setSearchTerm("");
     setSelectedCategory("all");
   }, []);
 
-  // Loading state
+  // === Loading State ===
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <RefreshCw className="w-8 h-8 mx-auto text-blue-600 animate-spin mb-4" />
-          <p className="text-gray-600">Memuat galeri foto...</p>
+          <div className="inline-block animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600 font-medium">Memuat galeri...</p>
         </div>
       </div>
     );
   }
 
-  // Error state
+  // === Error State ===
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-center px-4 bg-gray-50">
-        <div className="bg-white rounded-lg shadow-sm p-8 max-w-md">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <Card className="max-w-md w-full p-6 text-center">
           <AlertCircle className="w-12 h-12 mx-auto text-red-500 mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Gagal Memuat Galeri</h2>
-          <p className="text-red-600 mb-6">{error}</p>
+          <p className="text-red-600 text-sm mb-6">{error}</p>
           <Button onClick={fetchGallery} className="w-full">
             <RefreshCw className="w-4 h-4 mr-2" />
-            Muat Ulang
+            Coba Lagi
           </Button>
-        </div>
+        </Card>
       </div>
     );
   }
 
+  // === Main UI ===
   return (
     <div className="min-h-screen bg-gray-50">
-      <section className="py-16 bg-gradient-to-r from-green-600 to-blue-600 text-white">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Galeri Foto</h1>
-            <p className="text-xl opacity-90 mb-8">Jelajahi momen-momen berharga dari berbagai kegiatan dan program yang telah kami selenggarakan di RPTRA Kebon Melati.
-              Setiap foto menceritakan kisah komunitas yang hidup dan berkembang bersama.</p>
-          </div>
+      {/* Hero Section */}
+      <section className="py-20 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white">
+        <div className="container mx-auto px-4 max-w-4xl text-center">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 drop-shadow-md">Galeri Foto</h1>
+          <p className="text-lg md:text-xl opacity-90 max-w-2xl mx-auto leading-relaxed">
+            Jelajahi momen berharga dari kegiatan komunitas di RPTRA Kebon Melati. Setiap foto adalah cerita kebersamaan.
+          </p>
         </div>
       </section>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8" role="search" aria-label="Filter galeri">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {/* Filter Controls */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-8 p-5 bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" aria-hidden="true" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
-              placeholder="Cari foto berdasarkan judul, deskripsi, atau kategori..."
-              className="pl-10 pr-4 py-3 text-base"
+              placeholder="Cari judul, deskripsi, atau kategori..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              aria-label="Cari foto atau kegiatan"
+              className="pl-10 py-2.5 text-sm"
+              aria-label="Cari galeri"
             />
           </div>
-          <Select
-            value={selectedCategory}
-            onValueChange={setSelectedCategory}
-            aria-label="Filter berdasarkan kategori"
-          >
-            <SelectTrigger className="w-full sm:w-48 py-3">
-              <SelectValue placeholder="Pilih Kategori" />
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-full sm:w-48 py-2.5 text-sm">
+              <SelectValue placeholder="Semua Kategori" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Kategori</SelectItem>
@@ -538,18 +298,17 @@ export default function GalleryPage() {
           </Select>
         </div>
 
-        {/* Results Info */}
-        <div className="mb-6 flex items-center justify-between">
-          <p className="text-gray-600">
-            {loading ? "Memuat..." : `Menampilkan ${filteredItems.length} foto`}
-            {(searchTerm || selectedCategory !== "all") && (
-              <span className="ml-1">
-                dari {galleryItems.filter(item => item.status === 'published').length} total foto
-              </span>
-            )}
+        {/* Results Info & Reset */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
+          <p className="text-gray-700 font-medium">
+            Menampilkan <span className="font-bold">{filteredItems.length}</span> dari{" "}
+            <span className="text-gray-500">
+              {galleryItems.filter((i) => i.status === "published").length}
+            </span>{" "}
+            foto
           </p>
           {(searchTerm || selectedCategory !== "all") && (
-            <Button variant="outline" size="sm" onClick={resetFilters}>
+            <Button variant="ghost" size="sm" onClick={resetFilters} className="text-blue-600 hover:bg-blue-50">
               Reset Filter
             </Button>
           )}
@@ -557,57 +316,34 @@ export default function GalleryPage() {
 
         {/* Gallery Grid */}
         {filteredItems.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="bg-white rounded-lg shadow-sm p-12 max-w-md mx-auto">
+          <div className="py-16 text-center">
+            <Card className="max-w-md mx-auto p-8 bg-white">
               <ImageIcon className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 {searchTerm || selectedCategory !== "all"
-                  ? "Tidak Ada Foto yang Sesuai"
-                  : "Belum Ada Foto"
-                }
+                  ? "Tidak ada hasil ditemukan"
+                  : "Belum ada foto"}
               </h3>
               <p className="text-gray-600 mb-6">
                 {searchTerm || selectedCategory !== "all"
-                  ? "Coba ubah kata kunci pencarian atau filter kategori Anda"
-                  : "Foto-foto galeri sedang dalam proses pengunggahan"
-                }
+                  ? "Coba ubah kata kunci atau kategori pencarian Anda."
+                  : "Galeri akan segera diisi dengan momen terbaru."}
               </p>
               {(searchTerm || selectedCategory !== "all") && (
-                <Button onClick={resetFilters}>
-                  Lihat Semua Foto
+                <Button onClick={resetFilters} variant="outline">
+                  Tampilkan Semua
                 </Button>
               )}
-            </div>
+            </Card>
           </div>
         ) : (
-          <>
-            <div
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12"
-              role="grid"
-              aria-label="Galeri foto"
-            >
-              {filteredItems.map((item) => (
-                <GalleryCard
-                  key={String(item.id)}
-                  item={item}
-                  onClick={() => openModal(item)}
-                />
-              ))}
-            </div>
-
-            {/* Load more button could be added here for pagination */}
-          </>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredItems.map((item) => (
+              <GalleryCard key={String(item.id)} item={item} />
+            ))}
+          </div>
         )}
       </div>
-
-      {/* Modal */}
-      {selectedItem && (
-        <GalleryModal
-          item={selectedItem}
-          isOpen={isModalOpen}
-          onClose={closeModal}
-        />
-      )}
     </div>
   );
 }

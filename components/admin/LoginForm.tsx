@@ -48,7 +48,7 @@ export function LoginForm({
             <Input
               id="email"
               type="email"
-              placeholder="admin@rptrakebonmelati.id"
+              placeholder="Masukkan Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required

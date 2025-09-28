@@ -269,7 +269,7 @@ const LocationSection = memo(() => (
               </div>
             </div>
           </div>
-            <div className="mt-6 h-64 bg-gray-300 rounded-lg overflow-hidden">
+          <div className="mt-6 h-64 bg-gray-300 rounded-lg overflow-hidden">
             <iframe
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.479640730367!2d106.8142379!3d-6.2002777!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f6a1a8e9fd37%3A0xfd41c3867e738112!2sRPTRA%20Kebon%20Melati!5e0!3m2!1sid!2sid!4v1755798002460!5m2!1sid!2sid"
               width="100%"
@@ -432,20 +432,33 @@ export default function Home() {
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
-  
+
 
   return (
-    <div className="min-h-screen">
-      <HeroSection heroSlides={heroSlides} />
+    <div className="relative">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: "/logo_rptra_bw_edit.png", // ganti path sesuai aset Anda
+          backgroundPosition: "center",
+          backgroundSize: "cover",
+          backgroundRepeat: "no-repeat",
+          filter: "brightness(0.9) saturate(0.9)",
+        }}
+      />
+      <div className="min-h-screen">
+        <HeroSection heroSlides={heroSlides} />
 
-      <RptraStatusSection rptraStatus={rptraStatus} formatDateOnly={formatDateOnly} />
+        <RptraStatusSection rptraStatus={rptraStatus} formatDateOnly={formatDateOnly} />
 
-      <AboutSection />
-      <FeaturesSection features={features} />
-      <EventsSection />
-      <VisitsSection />
-      <LocationSection />
-      <CtaSection />
+        <AboutSection />
+        <FeaturesSection features={features} />
+        <EventsSection />
+        <VisitsSection />
+        <LocationSection />
+        <CtaSection />
+      </div>
     </div>
   );
 }

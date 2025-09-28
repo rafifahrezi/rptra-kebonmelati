@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   Calendar,
   MapPin,
@@ -8,15 +9,39 @@ import {
   Filter,
   ChevronLeft,
   ChevronRight,
-  X as XIcon,
-  Upload,
+  ArrowRight,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 
 /* =========================
    Types
    ========================= */
+interface EventRaw {
+  // server may supply _id or id, images may be array of strings or objects
+  _id?: string;
+  id?: string | number;
+  title?: string;
+  description?: string;
+  date?: string;
+  time?: string;
+  location?: string;
+  category?: string;
+  participants?: number;
+  maxParticipants?: number;
+  images?: Array<string | { fileId?: string; url?: string; filename?: string }>;
+  status?: "upcoming" | "ongoing" | "completed" | "finished";
+}
+
 interface EventItem {
-  id: number | string;
+  id: string; // normalized id (string)
   title: string;
   description: string;
   date: string;
@@ -25,8 +50,8 @@ interface EventItem {
   category: string;
   participants?: number;
   maxParticipants?: number;
-  images: string[]; // normalized to array
-  status: "upcoming" | "ongoing" | "completed";
+  images: string[]; // normalized to array of image identifiers or URLs
+  status: "upcoming" | "ongoing" | "completed" | "finished";
 }
 
 /* =========================
@@ -36,7 +61,7 @@ const LoadingState: React.FC = () => (
   <div className="min-h-screen flex items-center justify-center">
     <div className="text-center">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto" />
-      <p className="mt-4 text-gray-600">Memuat data...</p>
+      <p className="mt-4 text-gray-600 font-medium">Memuat data...</p>
     </div>
   </div>
 );
@@ -80,8 +105,6 @@ const formatDateReadable = (isoDate: string) =>
 
 /* =========================
    Status helpers (centralized)
-   - getStatusLabel: returns localized label
-   - getStatusClass: returns styling classes for badges
    ========================= */
 const getStatusLabel = (status: EventItem["status"]) => {
   switch (status) {
@@ -90,6 +113,7 @@ const getStatusLabel = (status: EventItem["status"]) => {
     case "ongoing":
       return "Sedang Berlangsung";
     case "completed":
+    case "finished":
       return "Selesai";
     default:
       return String(status);
@@ -103,25 +127,40 @@ const getStatusClass = (status: EventItem["status"]) => {
     case "ongoing":
       return "bg-green-100 text-green-800 border-green-200";
     case "completed":
+    case "finished":
       return "bg-gray-100 text-gray-800 border-gray-200";
     default:
       return "bg-gray-100 text-gray-800 border-gray-200";
   }
 };
 
-const getImageUrl = (imageId: string): string => `/api/files/${imageId}`;
+/**
+ * getImageUrl
+ * - If `identifier` already looks like a full URL (http / https / data: / /api/...), return as-is.
+ * - Otherwise assume it's a GridFS fileId (or similar) and return `/api/files/{id}`.
+ * - Prevent returning `/api/files/undefined` by guarding falsy values.
+ */
+const getImageUrl = (identifier?: string): string => {
+  if (!identifier) return "/images/fallback-image.png";
+  const trimmed = String(identifier).trim();
+  if (!trimmed) return "/images/fallback-image.png";
+  // full URLs or data URIs or already starting with /api/files
+  if (/^https?:\/\//i.test(trimmed) || /^data:/i.test(trimmed) || trimmed.startsWith("/api/") || trimmed.startsWith("/images/")) {
+    return trimmed;
+  }
+  // otherwise treat as file id -> GridFS endpoint
+  return `/api/files/${encodeURIComponent(trimmed)}`;
+};
+
 /* =========================
    ImageGallery (for modal) — show original-sized images (object-contain)
-   - preserves aspect ratio
-   - limited max height so UI stays intact
-   - arrows to navigate
    ========================= */
 const ImageGallery: React.FC<{
   images: string[];
   title: string;
 }> = ({ images, title }) => {
   const [index, setIndex] = useState(0);
-  const [imgError, setImgError] = useState(false);
+  const [imgErrorIndex, setImgErrorIndex] = useState<number | null>(null);
 
   const safeImages = Array.isArray(images) && images.length > 0 ? images : ["/images/fallback-image.png"];
 
@@ -134,26 +173,21 @@ const ImageGallery: React.FC<{
     setIndex((i) => (i === safeImages.length - 1 ? 0 : i + 1));
   };
 
-  const handleImageError = () => {
-    setImgError(true);
-  };
-
   return (
     <div>
-      {/* Image container: preserve original via object-contain, limit max height */}
       <div className="w-full flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden relative max-h-96">
-        {!imgError ? (
-          <img
-            src={getImageUrl(safeImages[index])} // Fixed: use index, not currentImageIndex
-            alt={`${title} - Gambar ${index + 1}`}
-            className="w-full h-full object-contain"
-            onError={handleImageError}
-            loading="lazy"
-          />
-        ) : (
+        {imgErrorIndex === index ? (
           <div className="w-full h-full flex items-center justify-center bg-gray-300 text-gray-600">
             Gambar tidak tersedia
           </div>
+        ) : (
+          <img
+            src={getImageUrl(safeImages[index])}
+            alt={`${title} - Gambar ${index + 1}`}
+            className="w-full h-full object-contain"
+            onError={() => setImgErrorIndex(index)}
+            loading="lazy"
+          />
         )}
 
         {safeImages.length > 1 && (
@@ -182,7 +216,6 @@ const ImageGallery: React.FC<{
         )}
       </div>
 
-      {/* Thumbnail row (optional) */}
       {safeImages.length > 1 && (
         <div className="mt-3 flex gap-2 overflow-x-auto">
           {safeImages.map((src, i) => (
@@ -192,7 +225,7 @@ const ImageGallery: React.FC<{
               className={`flex-shrink-0 w-20 h-12 rounded-md overflow-hidden border ${i === index ? "ring-2 ring-green-500" : "border-gray-200"} focus:outline-none`}
               aria-label={`Pilih gambar ${i + 1}`}
             >
-              <img src={getImageUrl(src)} alt={`Thumb ${i + 1}`} className="w-full h-full object-cover" loading="lazy" onError={handleImageError} />
+              <img src={getImageUrl(src)} alt={`Thumb ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
             </button>
           ))}
         </div>
@@ -202,57 +235,28 @@ const ImageGallery: React.FC<{
 };
 
 /* =========================
-   EventCard (grid item)
-   - clicking card opens modal (onView)
-   - card uses object-cover for listing thumbnails (kept small)
+   EventCard
+   - If id is missing we render a non-clickable card (no link to `/kegiatan/undefined`)
    ========================= */
-const EventCard: React.FC<{ event: EventItem; onView: () => void }> = ({ event, onView }) => {
+const EventCard: React.FC<{ event: EventItem }> = ({ event }) => {
   const [imgIndex, setImgIndex] = useState(0);
-  const [imgError, setImgError] = useState(false);
-
   const images = Array.isArray(event.images) && event.images.length > 0 ? event.images : ["/images/fallback-image.png"];
-
-  const prev = (e?: React.SyntheticEvent) => {
-    e?.stopPropagation();
-    setImgIndex((i) => (i === 0 ? images.length - 1 : i - 1));
-  };
-  const next = (e?: React.SyntheticEvent) => {
-    e?.stopPropagation();
-    setImgIndex((i) => (i === images.length - 1 ? 0 : i + 1));
-  };
-
   const statusLabel = getStatusLabel(event.status);
   const statusColor = getStatusClass(event.status);
 
-  const handleImageError = () => {
-    setImgError(true);
-  };
+  const hasValidId = Boolean(event.id && event.id !== "undefined");
 
-  return (
-    <article
-      onClick={onView}
-      className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden focus-within:ring-2 focus-within:ring-green-400 cursor-pointer"
-      aria-label={`Event ${event.title}`}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === "Enter") onView(); }}
-    >
+  const CardInner = (
+    <>
       <div className="relative h-48 bg-gray-200 overflow-hidden">
-        {!imgError ? (
-          <img
-            src={getImageUrl(images[imgIndex])} // Fixed: use imgIndex
-            alt={event.title}
-            className="w-full h-full object-cover"
-            onError={handleImageError}
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-300 text-gray-600">
-            Gambar tidak tersedia
-          </div>
-        )}
+        <img
+          src={getImageUrl(images[imgIndex])}
+          alt={event.title}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          loading="lazy"
+        />
 
-        <span className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-medium ${statusColor}`} aria-hidden>
+        <span className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-medium ${statusColor} shadow-sm`} aria-hidden>
           {statusLabel}
         </span>
 
@@ -263,17 +267,17 @@ const EventCard: React.FC<{ event: EventItem; onView: () => void }> = ({ event, 
         {images.length > 1 && (
           <>
             <button
-              onClick={(e) => { e.stopPropagation(); prev(e); }}
+              onClick={(e) => { e.stopPropagation(); setImgIndex((i) => (i === 0 ? images.length - 1 : i - 1)); }}
               aria-label="Gambar sebelumnya"
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 p-2 rounded-full shadow"
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 p-2 rounded-full shadow opacity-0 group-hover:opacity-100 transition-opacity"
               type="button"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); next(e); }}
+              onClick={(e) => { e.stopPropagation(); setImgIndex((i) => (i === images.length - 1 ? 0 : i + 1)); }}
               aria-label="Gambar selanjutnya"
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 p-2 rounded-full shadow"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 p-2 rounded-full shadow opacity-0 group-hover:opacity-100 transition-opacity"
               type="button"
             >
               <ChevronRight className="w-5 h-5" />
@@ -288,9 +292,9 @@ const EventCard: React.FC<{ event: EventItem; onView: () => void }> = ({ event, 
 
       <div className="p-5">
         <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 mb-1">{event.title}</h3>
-        <p className="text-sm text-gray-600 line-clamp-3 mb-3">{event.description}</p>
+        <p className="text-sm text-gray-600 line-clamp-3 mb-4">{event.description}</p>
 
-        <div className="flex items-center justify-between text-sm text-gray-600">
+        <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
           <div className="flex items-center gap-3">
             <Calendar className="w-4 h-4 text-green-600" />
             <time className="text-gray-700" dateTime={event.date}>
@@ -303,7 +307,31 @@ const EventCard: React.FC<{ event: EventItem; onView: () => void }> = ({ event, 
             <span className="text-gray-700">{event.location}</span>
           </div>
         </div>
+
+        {hasValidId ? (
+          <Link
+            href={`/kegiatan/${encodeURIComponent(event.id)}`}
+            className="inline-flex items-center gap-2 text-green-600 hover:text-green-700 font-medium text-sm transition-colors group/btn"
+          >
+            Lihat Selengkapnya
+            <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+          </Link>
+        ) : (
+          <span className="inline-flex items-center gap-2 text-gray-400 font-medium text-sm" title="ID event tidak tersedia">
+            Lihat Selengkapnya
+            <ArrowRight className="w-4 h-4 opacity-50" />
+          </span>
+        )}
       </div>
+    </>
+  );
+
+  return (
+    <article
+      className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group focus-within:ring-2 focus-within:ring-green-400 transform hover:-translate-y-1"
+      aria-label={`Event ${event.title}`}
+    >
+      {CardInner}
     </article>
   );
 };
@@ -312,7 +340,6 @@ const EventCard: React.FC<{ event: EventItem; onView: () => void }> = ({ event, 
    Main Page
    ========================= */
 const Event: React.FC = () => {
-  // Keep state & logic same as your original
   const [events, setEvents] = useState<EventItem[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<EventItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -320,7 +347,41 @@ const Event: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
+
+  const normalizeRawToItem = (raw: EventRaw): EventItem | null => {
+    // prefer _id, then id; ensure final id is string and not "undefined"
+    const rawId = raw._id ?? raw.id;
+    const normalizedId = rawId !== undefined && rawId !== null ? String(rawId) : null;
+    if (!normalizedId || normalizedId === "undefined") {
+      // Return null for items without stable id — still possible to include, but safer to skip
+      // If you prefer to keep items without id in listing, change to provide fallback id strategy
+      return null;
+    }
+
+    // images: support array of strings or objects with fileId / url
+    const normalizedImages: string[] = Array.isArray(raw.images)
+      ? raw.images.map((img) => {
+        if (!img) return "/images/fallback-image.png";
+        if (typeof img === "string") return img;
+        if (typeof img === "object") return (img.url ?? img.fileId ?? img.filename ?? "/images/fallback-image.png");
+        return "/images/fallback-image.png";
+      }).filter(Boolean)
+      : [];
+
+    return {
+      id: normalizedId,
+      title: raw.title ?? "Tanpa Judul",
+      description: raw.description ?? "",
+      date: raw.date ?? new Date().toISOString(),
+      time: raw.time,
+      location: raw.location ?? "-",
+      category: raw.category ?? "-",
+      participants: typeof raw.participants === "number" ? raw.participants : undefined,
+      maxParticipants: typeof raw.maxParticipants === "number" ? raw.maxParticipants : undefined,
+      images: normalizedImages.length > 0 ? normalizedImages : ["/images/fallback-image.png"],
+      status: (raw.status as EventItem["status"]) ?? "upcoming",
+    };
+  };
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -331,11 +392,18 @@ const Event: React.FC = () => {
         const text = await response.text();
         throw new Error(text || "Gagal mengambil data event");
       }
-      const data: EventItem[] = await response.json();
-      const normalized = data.map((ev) => ({
-        ...ev,
-        images: Array.isArray(ev.images) ? ev.images : ev.images ? [ev.images] : [],
-      }));
+      const dataRaw = await response.json();
+
+      // Support API returning { success, events, pagination } or a plain array
+      const serverList: EventRaw[] = Array.isArray(dataRaw)
+        ? dataRaw
+        : Array.isArray(dataRaw.events)
+          ? dataRaw.events
+          : [];
+
+      // Normalize & drop items without valid id (prevents '/kegiatan/undefined' links)
+      const normalized = serverList.map(normalizeRawToItem).filter((x): x is EventItem => x !== null);
+
       setEvents(normalized);
       setFilteredEvents(normalized);
     } catch (err) {
@@ -349,7 +417,6 @@ const Event: React.FC = () => {
     fetchEvents();
   }, [fetchEvents]);
 
-  // Filtering (kept same)
   const applyFilters = useCallback(() => {
     let filtered = [...events];
     if (searchTerm) {
@@ -367,7 +434,6 @@ const Event: React.FC = () => {
     applyFilters();
   }, [applyFilters]);
 
-  // UI lists
   const categories = ["all", "Olahraga", "Edukasi", "Lingkungan", "Kuliner", "Seni"];
   const statuses = [
     { value: "all", label: "Semua Status" },
@@ -376,9 +442,6 @@ const Event: React.FC = () => {
     { value: "completed", label: "Selesai" },
   ];
 
-  const closeModal = () => setSelectedEvent(null);
-
-  /* Render states */
   if (loading) return <LoadingState />;
   if (error) return <ErrorState message={error} />;
 
@@ -396,55 +459,55 @@ const Event: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter */}
-      <div className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-10">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      // {/* Filter */}
+      <div className="sticky top-0 z-20 inset-x-0 bg-white shadow-lg rounded-b-2xl -mt-10">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex flex-col lg:flex-row gap-4 items-center">
-            <div className="relative flex-1 max-w-xl w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Cari kegiatan..."
+            {/* Search Bar */}
+            <div className="relative flex-1 w-full max-w-3xl">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500 w-4 h-4" aria-hidden="true" />
+              <Input
+                placeholder="Cari kegiatan, acara, atau lokasi..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 shadow-sm transition-all"
+                className="pl-10 pr-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 shadow-sm transition-all duration-300 bg-white hover:shadow-md focus:shadow-md text-gray-700"
                 aria-label="Cari kegiatan"
               />
             </div>
+            {/* Filters Container */}
+            <div className="flex flex-wrap gap-3 w-full lg:w-auto">
+              {/* Category Filter */}
+              <Select value={selectedCategory} onValueChange={setSelectedCategory} aria-label="Filter kategori">
+                <SelectTrigger className="w-full min-w-[160px] lg:w-48 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 shadow-sm transition-all duration-300 bg-white hover:shadow-md focus:shadow-md text-gray-700">
+                  <SelectValue placeholder="Semua Kategori" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c === "all" ? "Semua Kategori" : c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <div className="flex items-center gap-3">
-              <Filter className="text-gray-500 w-5 h-5" />
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 shadow-sm transition-all"
-                aria-label="Filter kategori"
-              >
-                {categories.map((c) => (
-                  <option key={c} value={c}>
-                    {c === "all" ? "Semua Kategori" : c}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 shadow-sm transition-all"
-                aria-label="Filter status"
-              >
-                {statuses.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
+              {/* Status Filter */}
+              <Select value={selectedStatus} onValueChange={setSelectedStatus} aria-label="Filter status">
+                <SelectTrigger className="w-full min-w-[160px] lg:w-48 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 shadow-sm transition-all duration-300 bg-white hover:shadow-md focus:shadow-md text-gray-700">
+                  <SelectValue placeholder="Semua Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {statuses.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
       </div>
+
 
       {/* Content */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -459,79 +522,13 @@ const Event: React.FC = () => {
           <NoResultsState />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredEvents.map((ev) => {
-              const key = ev.id !== undefined ? String(ev.id) : `${ev.title}-${ev.date}`;
-              return <EventCard key={key} event={ev} onView={() => setSelectedEvent(ev)} />;
-            })}
+            {filteredEvents.map((ev) => (
+              <EventCard key={ev.id} event={ev} />
+            ))}
           </div>
         )}
+
       </div>
-
-      {/* Modal for Event Details */}
-      {selectedEvent && (
-        <div
-          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-label={`Detail event ${selectedEvent.title}`}
-          onClick={closeModal}
-        >
-          <div
-            className="bg-white rounded-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <header className="bg-gradient-to-r from-emerald-500 to-teal-600 p-6 text-white rounded-t-2xl flex items-center justify-between">
-              <h3 className="text-xl font-bold">Lihat Event</h3>
-              <button
-                onClick={closeModal}
-                aria-label="Tutup"
-                className="p-2 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white"
-              >
-                <XIcon className="w-5 h-5" />
-              </button>
-            </header>
-
-            <div className="p-6 space-y-6">
-              <ImageGallery images={selectedEvent.images} title={selectedEvent.title} />
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusClass(selectedEvent.status)}`}>
-                    {getStatusLabel(selectedEvent.status)}
-                  </span>
-                  <span className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">{selectedEvent.category}</span>
-                </div>
-
-                <h4 className="text-2xl font-extrabold text-gray-900">{selectedEvent.title}</h4>
-
-                {selectedEvent.description && (
-                  <div className="prose max-w-none">
-                    <p className="text-gray-700 whitespace-pre-line leading-relaxed">{selectedEvent.description}</p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-5 h-5 text-emerald-600" />
-                    <div>
-                      <p className="text-sm text-gray-500">Tanggal</p>
-                      <p className="font-medium text-gray-900">{formatDateReadable(selectedEvent.date)}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <MapPin className="w-5 h-5 text-green-600" />
-                    <div>
-                      <p className="text-sm text-gray-500">Lokasi</p>
-                      <p className="font-medium text-gray-900">{selectedEvent.location}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

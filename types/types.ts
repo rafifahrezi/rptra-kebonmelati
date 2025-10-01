@@ -10,6 +10,17 @@ export interface VisitDataFromAPI {
   updatedAt?: string;
 }
 
+// Tambahkan definisi VisitFormData
+export interface VisitFormData {
+  date: string;
+  time: string;
+  balita: string;
+  anak: string;
+  remaja: string;
+  dewasa: string;
+  lansia: string;
+}
+
 export interface ProcessedVisit {
   id: string;
   date: string;
@@ -47,5 +58,3 @@ export interface RequestData {
   createdAt?: string;
   updatedAt?: string;
 }
-
-

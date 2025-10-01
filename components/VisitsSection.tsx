@@ -20,10 +20,10 @@ interface VisitsSectionProps {
   initialPageSize?: number;
 }
 
-const VisitsSection: React.FC<VisitsSectionProps> = ({ 
-  showHeader = true, 
+const VisitsSection: React.FC<VisitsSectionProps> = ({
+  showHeader = true,
   showCTACard = true,
-  initialPageSize = 10 
+  initialPageSize = 10
 }) => {
   const [visits, setVisits] = useState<VisitDataFromAPI[]>([]);
   const [loading, setLoading] = useState(false);
@@ -60,32 +60,32 @@ const VisitsSection: React.FC<VisitsSectionProps> = ({
   const fetchVisits = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const res = await fetch("/api/analytics", {
         credentials: "include",
         cache: "no-store",
       });
-      
+
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ message: "Network error" }));
         throw new Error(errorData.message || `HTTP ${res.status}: Failed to fetch visits`);
       }
-      
+
       const data = await res.json();
-      
+
       const mappedVisits: VisitDataFromAPI[] = Array.isArray(data)
         ? data.map((item: any) => ({
-            id: item._id || item.id,
-            date: item.date,
-            balita: item.balita ?? 0,
-            anak: item.anak ?? 0,
-            remaja: item.remaja ?? 0,
-            dewasa: item.dewasa ?? 0,
-            lansia: item.lansia ?? 0,
-            createdAt: item.createdAt,
-            updatedAt: item.updatedAt,
-          }))
+          id: item._id || item.id,
+          date: item.date,
+          balita: item.balita ?? 0,
+          anak: item.anak ?? 0,
+          remaja: item.remaja ?? 0,
+          dewasa: item.dewasa ?? 0,
+          lansia: item.lansia ?? 0,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+        }))
         : [];
 
       setVisits(mappedVisits);
@@ -107,8 +107,8 @@ const VisitsSection: React.FC<VisitsSectionProps> = ({
     return [...processedVisits].sort((a, b) => {
       const dateA = new Date(a.date);
       const dateB = new Date(b.date);
-      
-      return sortOrder === 'desc' 
+
+      return sortOrder === 'desc'
         ? dateB.getTime() - dateA.getTime()
         : dateA.getTime() - dateB.getTime();
     });
@@ -191,27 +191,21 @@ const VisitsSection: React.FC<VisitsSectionProps> = ({
               Statistik Kunjungan RPTRA
             </h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Ringkasan komprehensif data pengunjung berdasarkan kategori usia dengan 
+              Ringkasan komprehensif data pengunjung berdasarkan kategori usia dengan
               perbandingan periode waktu yang akurat dan real-time.
             </p>
-            
+
             {/* Summary Statistics */}
-            <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                <div className="text-2xl font-bold text-blue-600">{summaryStats.totalVisitors}</div>
-                <div className="text-sm text-gray-500">Total Kunjungan</div>
-              </div>
-              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                <div className="text-2xl font-bold text-green-600">{summaryStats.totalDays}</div>
-                <div className="text-sm text-gray-500">Hari Tercatat</div>
-              </div>
-              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                <div className="text-2xl font-bold text-purple-600">{summaryStats.averagePerDay}</div>
-                <div className="text-sm text-gray-500">Rata-rata Harian</div>
-              </div>
-              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                <div className="text-2xl font-bold text-orange-600">{summaryStats.highestDay.count}</div>
-                <div className="text-sm text-gray-500">Tertinggi ({summaryStats.highestDay.date})</div>
+            <div className="mt-8 flex justify-center">
+              <div className="grid grid-cols-2 gap-4 max-w-4xl">
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                  <div className="text-2xl font-bold text-blue-600">{summaryStats.totalVisitors}</div>
+                  <div className="text-sm text-gray-500">Total Kunjungan</div>
+                </div>
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                  <div className="text-2xl font-bold text-orange-600">{summaryStats.highestDay.count}</div>
+                  <div className="text-sm text-gray-500">Tertinggi ({summaryStats.highestDay.date})</div>
+                </div>
               </div>
             </div>
           </div>
@@ -223,7 +217,7 @@ const VisitsSection: React.FC<VisitsSectionProps> = ({
             <StatsCard title="Mingguan" visits={processedVisits} color="purple" />
             <StatsCard title="Bulanan" visits={processedVisits} color="blue" />
             <StatsCard title="Tahunan" visits={processedVisits} color="green" />
-            
+
             {showCTACard && (
               <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 border border-yellow-200 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between">
                 <div className="flex justify-center mb-4">
@@ -262,7 +256,7 @@ const VisitsSection: React.FC<VisitsSectionProps> = ({
                   Menampilkan {paginatedVisits.length} dari {sortedVisits.length} total data
                 </p>
               </div>
-              
+
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
@@ -271,7 +265,7 @@ const VisitsSection: React.FC<VisitsSectionProps> = ({
                   <Calendar className="w-4 h-4" />
                   {sortOrder === 'desc' ? 'Terbaru' : 'Terlama'}
                 </button>
-                
+
                 <button
                   onClick={fetchVisits}
                   disabled={loading}
@@ -313,7 +307,7 @@ const VisitsSection: React.FC<VisitsSectionProps> = ({
                   </th>
                 </tr>
               </thead>
-              
+
               <tbody className="divide-y divide-gray-100">
                 {paginatedVisits.length === 0 ? (
                   <tr>
@@ -329,9 +323,8 @@ const VisitsSection: React.FC<VisitsSectionProps> = ({
                   paginatedVisits.map((visit, index) => (
                     <tr
                       key={visit.id}
-                      className={`hover:bg-gray-50 transition-colors duration-200 ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-gray-25'
-                      }`}
+                      className={`hover:bg-gray-50 transition-colors duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'
+                        }`}
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col">
@@ -343,7 +336,7 @@ const VisitsSection: React.FC<VisitsSectionProps> = ({
                           </span>
                         </div>
                       </td>
-                      
+
                       {VISITOR_FIELDS.map(({ key }) => (
                         <td
                           key={`${visit.id}-${key}`}
@@ -354,7 +347,7 @@ const VisitsSection: React.FC<VisitsSectionProps> = ({
                           </span>
                         </td>
                       ))}
-                      
+
                       <td className="px-6 py-4 text-center">
                         <div className="flex flex-col items-center">
                           <span className="inline-flex items-center justify-center w-12 h-8 rounded-full bg-green-100 text-green-700 font-bold text-sm">
@@ -386,7 +379,7 @@ const VisitsSection: React.FC<VisitsSectionProps> = ({
                     Menampilkan {((page - 1) * perPage) + 1} - {Math.min(page * perPage, sortedVisits.length)} dari {sortedVisits.length} data
                   </span>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setPage(1)}
@@ -395,7 +388,7 @@ const VisitsSection: React.FC<VisitsSectionProps> = ({
                   >
                     Pertama
                   </button>
-                  
+
                   <button
                     onClick={() => setPage(prev => Math.max(1, prev - 1))}
                     disabled={page === 1}
@@ -403,44 +396,42 @@ const VisitsSection: React.FC<VisitsSectionProps> = ({
                   >
                     Sebelumnya
                   </button>
-                  
+
                   <div className="flex items-center gap-1">
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       const pageNum = i + 1;
                       const isActive = pageNum === page;
-                      
+
                       return (
                         <button
                           key={pageNum}
                           onClick={() => setPage(pageNum)}
-                          className={`w-10 h-10 text-sm rounded-lg font-medium transition-colors ${
-                            isActive
+                          className={`w-10 h-10 text-sm rounded-lg font-medium transition-colors ${isActive
                               ? 'bg-blue-600 text-white shadow-sm'
                               : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                          }`}
+                            }`}
                         >
                           {pageNum}
                         </button>
                       );
                     })}
-                    
+
                     {totalPages > 5 && (
                       <>
                         {page < totalPages - 2 && <span className="px-2 text-gray-400">...</span>}
                         <button
                           onClick={() => setPage(totalPages)}
-                          className={`w-10 h-10 text-sm rounded-lg font-medium transition-colors ${
-                            page === totalPages
+                          className={`w-10 h-10 text-sm rounded-lg font-medium transition-colors ${page === totalPages
                               ? 'bg-blue-600 text-white shadow-sm'
                               : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                          }`}
+                            }`}
                         >
                           {totalPages}
                         </button>
                       </>
                     )}
                   </div>
-                  
+
                   <button
                     onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={page === totalPages}
@@ -448,7 +439,7 @@ const VisitsSection: React.FC<VisitsSectionProps> = ({
                   >
                     Selanjutnya
                   </button>
-                  
+
                   <button
                     onClick={() => setPage(totalPages)}
                     disabled={page === totalPages}
@@ -460,75 +451,6 @@ const VisitsSection: React.FC<VisitsSectionProps> = ({
               </div>
             </div>
           )}
-        </div>
-
-        {/* Additional Insights */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Visitor Categories Breakdown */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
-              Distribusi Kategori Pengunjung
-            </h3>
-            
-            <div className="space-y-3">
-              {VISITOR_FIELDS.map(({ key, label, color }) => {
-                const total = processedVisits.reduce((sum, visit) => sum + (visit[key as keyof ProcessedVisit] as number), 0);
-                const percentage = processedVisits.length > 0 
-                  ? Math.round((total / processedVisits.reduce((sum, visit) => sum + visit.total, 0)) * 100) 
-                  : 0;
-                
-                return (
-                  <div key={key} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${color.split(' ')[0]}`} />
-                      <span className="font-medium text-gray-700">{label}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-bold text-gray-900">{total.toLocaleString('id-ID')}</span>
-                      <span className="text-sm text-gray-500 ml-2">({percentage}%)</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Recent Trends */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-green-600" />
-              Tren Kunjungan Terbaru
-            </h3>
-            
-            <div className="space-y-4">
-              {sortedVisits.slice(0, 5).map((visit) => (
-                <div key={visit.id} className="flex items-center justify-between py-2">
-                  <div>
-                    <div className="font-medium text-gray-900">
-                      {DateUtils.formatDateOnly(visit.date)}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {new Date(visit.date).toLocaleDateString('id-ID', { weekday: 'long' })}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-gray-900">{visit.total} pengunjung</div>
-                    <div className="text-xs text-gray-500">
-                      Balita: {visit.balita}, Anak: {visit.anak}, Remaja: {visit.remaja}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
-              {sortedVisits.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <Calendar className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                  <p>Belum ada data kunjungan terbaru</p>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       </div>
     </section>

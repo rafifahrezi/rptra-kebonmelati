@@ -1,11 +1,13 @@
-'use client';
+"use client";
 
-import React, { memo, useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
-import { Calendar, MapPin, Users, Heart, Book, Activity, ChevronRight, ChevronLeft, Clock } from 'lucide-react';
+import React, { memo, useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { Calendar, MapPin, Users, Heart, Book, Activity, ChevronRight, ChevronLeft, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button"
 import VisitsSection from "@/components/VisitsSection";
-
+import { EventItem } from "@/types/event";
+import { getImageUrl } from "@/lib/image";
+import { normalizeAndSortEvents } from "@/lib/events";
 // Type Definitions
 interface RptraStatus {
   status: boolean;
@@ -29,21 +31,6 @@ interface HeroSlide {
   title: string;
   subtitle: string;
 }
-
-interface EventItem {
-  _id: number;
-  title: string;
-  description: string;
-  date: string;
-  time: string;
-  location: string;
-  category: string;
-  participants: number;
-  maxParticipants: number;
-  images: string[];
-  status: "upcoming" | "ongoing" | "completed";
-}
-
 
 // StatsCard Component
 const StatsCard = memo(({ title, value, color = 'green' }: { title: string; value: number; color?: string }) => {
@@ -204,43 +191,121 @@ const FeaturesSection = memo(({ features }: { features: { icon: React.ElementTyp
 ));
 
 // Events Section
-const EventsSection = memo(() => (
-  <section className="py-16 bg-white">
-    <div className="container mx-auto px-4">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900">Kegiatan Terbaru</h2>
-        <Link href="/events">
-          <Button variant="outline">
-            Lihat Semua
-          </Button>
-        </Link>
-      </div>
+const EventsSection = memo(() => {
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {[1, 2, 3].map((item) => (
-          <div key={item} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-            <div className="h-48 bg-gradient-to-r from-green-400 to-blue-500"></div>
-            <div className="p-6">
-              <div className="flex items-center text-sm text-gray-500 mb-2">
-                <Calendar className="w-4 h-4 mr-1" />
-                <span>15 Februari 2025</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Senam Merdeka Minggu Pagi
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Kegiatan senam bersama untuk memperingati kemerdekaan Indonesia.
-              </p>
-              <Button size="sm" variant="outline">
-                Selengkapnya
-              </Button>
-            </div>
+  const fetchEvents = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // ✅ Ambil semua event published (backend handle filter)
+      const res = await fetch("/api/events?status=published", {
+        cache: "no-store",
+      });
+      
+      if (!res.ok) throw new Error("Gagal mengambil data kegiatan");
+      
+      const rawData = await res.json();
+      
+      // ✅ Gunakan fungsi reusable
+      const normalizedEvents = normalizeAndSortEvents(rawData, 3);
+      
+      setEvents(normalizedEvents);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
+  
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
+
+  if (loading) {
+    return (
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900">Kegiatan Terbaru</h2>
+            <Link href="/kegiatan">
+              <Button variant="outline">Lihat Semua</Button>
+            </Link>
           </div>
-        ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="bg-gray-100 animate-pulse rounded-lg shadow-md h-72" />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={fetchEvents} variant="outline">
+            Coba Lagi
+          </Button>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="py-16 bg-white">
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-3xl font-bold text-gray-900">Kegiatan Terbaru</h2>
+          <Link href="/kegiatan">
+            <Button variant="outline">Lihat Semua</Button>
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {events.map((event) => (
+            <div key={event._id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+              <div className="h-48 relative">
+                <img
+                  src={event.images[0] ? getImageUrl(event.images[0]) : "/placeholder-image.jpg"}
+                  alt={event.title}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = "/placeholder-image.jpg";
+                  }}
+                />
+              </div>
+              <div className="p-6">
+                <div className="flex items-center text-sm text-gray-500 mb-2">
+                  <Calendar className="w-4 h-4 mr-1" />
+                  <span>{new Date(event.date).toLocaleDateString("id-ID")}</span>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2">
+                  {event.title}
+                </h3>
+                <p className="text-gray-600 mb-4 line-clamp-3">
+                  {event.description}
+                </p>
+                <Button size="sm" variant="outline" asChild>
+                  <Link href={`/kegiatan/${event._id}`}>Selengkapnya</Link>
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
-  </section>
-));
+    </section>
+  );
+});
 
 // Location Section
 const LocationSection = memo(() => (
@@ -380,7 +445,6 @@ export default function Home() {
     };
     fetchStatus();
   }, []);
-
 
   const formatDateOnly = (dateString: string | null) => {
     if (!dateString) return '-';

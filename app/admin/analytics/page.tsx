@@ -241,18 +241,28 @@ export default function MainPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Snackbar state
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; type: 'success' | 'error' }>({
-    open: false,
-    message: '',
-    type: 'success',
-  });
+  const [snackbar, setSnackbar] = useState<{
+      open: boolean;
+      message: string;
+      type: 'success' | 'error';
+    }>({
+      open: false,
+      message: '',
+      type: 'success',
+    });
 
   // New state: view mode ('list' or 'calendar')
   const [view, setView] = useState<"list" | "calendar">("list");
 
-  const openSnackbar = (message: string, type: 'success' | 'error') => {
-    setSnackbar({ open: true, message, type });
-  };
+ const openSnackbar = useCallback((message: string, type: 'success' | 'error') => {
+     setSnackbar((prev) => ({
+       ...prev,
+       open: true,
+       message,
+       type,
+     }));
+   }, []);
+
 
   const closeSnackbar = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
@@ -565,11 +575,13 @@ export default function MainPage() {
           </div>
         </div>
       </div>
-
+      
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-12 py-8">
         {view === "calendar" ? (
-          <Calender visits={visits} onDateClick={handleCalendarDateClick} />
+          <Calender 
+    onDateClick={handleCalendarDateClick} 
+  />
         ) : (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-6 border-b border-gray-200">

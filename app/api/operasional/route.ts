@@ -5,32 +5,30 @@ import Operasional from "@/models/Operasional";
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get("admin-token")?.value;
-    if (!token) {
-      return NextResponse.json({ message: "Token tidak ditemukan" }, { status: 401 });
-    }
-
-    jwt.verify(token, process.env.JWT_SECRET as string);
+    // Connect to database
     await connectDB();
 
-    let operasional = await Operasional.findById("current");
+    // Fetch operational status using lean for performance
+    let operasional = await Operasional.findById("current").lean();
     if (!operasional) {
-      // Create default jika belum ada
-      operasional = new Operasional({
+      // Create default operational status if not found
+      operasional = await Operasional.create({
         _id: "current",
         status: true,
         updatedAt: new Date(),
         updatedBy: "Sistem",
         updatedByEmail: "system@local",
       });
-      await operasional.save();
     }
 
-    // frontend butuh langsung data
-    return NextResponse.json(operasional);
+    // Return operational status
+    return NextResponse.json(operasional, { status: 200 });
   } catch (error) {
-    console.error("GET operasional error:", error);
-    return NextResponse.json({ message: "Terjadi kesalahan server" }, { status: 500 });
+    console.error("GET /api/operasional error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 

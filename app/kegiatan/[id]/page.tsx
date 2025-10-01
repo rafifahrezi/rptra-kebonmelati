@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, MapPin, Users, RefreshCw, AlertCircle, ImageIcon } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Users, RefreshCw, AlertCircle, ImageIcon, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 /* ----- Types ----- */
 interface EventImage {
@@ -96,122 +96,189 @@ export default function EventDetailPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isNotFound, setIsNotFound] = useState<boolean>(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
 
-  // inside your component file (use the helpers you already have, e.g. buildImageFromRaw)
+  // Image Modal Component
+  const ImageModal = ({ images, initialIndex }: { images: EventImage[], initialIndex: number }) => {
+    const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
-const fetchEvent = useCallback(async (signal?: AbortSignal) => {
-  // Guard: don't call API when id is falsy/empty
-  if (!id) {
-    setError("ID kegiatan tidak ada.");
-    setIsNotFound(false);
-    setEvent(null);
-    setLoading(false);
-    return;
-  }
-
-  setLoading(true);
-  setError(null);
-  setIsNotFound(false);
-
-  try {
-    // encodeURIComponent protects against special chars in id
-    const safeId = encodeURIComponent(id);
-
-    const res = await fetch(`/api/events/${safeId}`, {
-      method: "GET",
-      cache: "no-store",
-      signal,
-      headers: { Accept: "application/json" },
-    });
-
-    if (!res.ok) {
-      // try to parse JSON body (if any)
-      let jsonErr: any = null;
-      try { jsonErr = await res.json(); } catch { /* ignore parse errors */ }
-
-      if (res.status === 400) {
-        setError(jsonErr?.error ?? "Request tidak valid (ID mungkin tidak sesuai).");
-        setIsNotFound(false);
-        setEvent(null);
-        setLoading(false);
-        return;
-      }
-
-      if (res.status === 404) {
-        setIsNotFound(true);
-        setError(jsonErr?.error ?? "Kegiatan tidak ditemukan");
-        setEvent(null);
-        setLoading(false);
-        return;
-      }
-
-      throw new Error(jsonErr?.error ?? `HTTP ${res.status} ${res.statusText}`);
-    }
-
-    const data: EventApiShape = await res.json();
-
-    // Normalize images (server may return array of fileIds or objects)
-    const rawImages = Array.isArray(data.images) ? data.images : [];
-    const normalizedImages = rawImages
-      .map((r) => buildImageFromRaw(r as any, data.title || ""))
-      .filter((img): img is EventImage => !!img && !!img.url);
-
-    const normalized: NormalizedEvent = {
-      _id: (data._id as string) || (data.id as string) || id,
-      title: data.title || "Tanpa Judul",
-      description: data.description || "",
-      date: data.date,
-      time: data.time,
-      location: data.location || "-",
-      category: data.category || "-",
-      participants: typeof data.participants === "number" ? data.participants : undefined,
-      maxParticipants: typeof data.maxParticipants === "number" ? data.maxParticipants : undefined,
-      images: normalizedImages,
-      status: (data.status as NormalizedEvent["status"]) || "upcoming",
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
+    const handleNext = () => {
+      setCurrentIndex((prev) => 
+        prev === images.length - 1 ? 0 : prev + 1
+      );
     };
 
-    setEvent(normalized);
-    setError(null);
-    setIsNotFound(false);
-  } catch (err: any) {
-    if (err?.name === "AbortError") {
-      // request was aborted — ignore
+    const handlePrev = () => {
+      setCurrentIndex((prev) => 
+        prev === 0 ? images.length - 1 : prev - 1
+      );
+    };
+
+    const currentImage = images[currentIndex];
+
+    return (
+      <div 
+        className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+        onClick={() => setSelectedImageIndex(null)}
+      >
+        <button 
+          className="absolute top-4 right-4 text-white p-2 hover:bg-white/20 rounded-full"
+          onClick={() => setSelectedImageIndex(null)}
+        >
+          <X className="w-8 h-8" />
+        </button>
+
+        <button 
+          className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 p-2 rounded-full"
+          onClick={(e) => {
+            e.stopPropagation();
+            handlePrev();
+          }}
+        >
+          <ChevronLeft className="w-8 h-8 text-white" />
+        </button>
+
+        <button 
+          className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 p-2 rounded-full"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleNext();
+          }}
+        >
+          <ChevronRight className="w-8 h-8 text-white" />
+        </button>
+
+        <div className="max-w-4xl max-h-[90vh] flex items-center justify-center">
+          <img 
+            src={currentImage.url} 
+            alt={currentImage.alt} 
+            className="max-w-full max-h-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+
+        <div className="absolute bottom-4 text-white text-center">
+          <p>{currentImage.alt}</p>
+          <p className="text-sm text-gray-300">
+            {currentIndex + 1} / {images.length}
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+  const fetchEvent = useCallback(async (signal?: AbortSignal) => {
+    // Guard: don't call API when id is falsy/empty
+    if (!id) {
+      setError("ID kegiatan tidak ada.");
+      setIsNotFound(false);
+      setEvent(null);
+      setLoading(false);
       return;
     }
-    console.error("fetchEvent error:", err);
-    setError(err?.message ?? "Gagal memuat data kegiatan");
-    setEvent(null);
-  } finally {
-    setLoading(false);
-  }
-}, [id]);
 
-
-/* useEffect: only fetch when id is present/resolved */
-useEffect(() => {
-  // If useParams returns undefined while hydrating, keep loading until it's resolved.
-  // If id is an empty string or falsy (resolved), show a helpful message.
-  if (typeof id === "undefined") {
-    // still resolving (do nothing; keep loading)
-    return;
-  }
-
-  if (!id) {
-    // param resolved but missing/empty -> show user-friendly error
-    setLoading(false);
-    setError("ID kegiatan tidak ditemukan di URL.");
-    setEvent(null);
+    setLoading(true);
+    setError(null);
     setIsNotFound(false);
-    return;
-  }
 
-  const controller = new AbortController();
-  fetchEvent(controller.signal);
-  return () => controller.abort();
-}, [id, fetchEvent]);
+    try {
+      // encodeURIComponent protects against special chars in id
+      const safeId = encodeURIComponent(id);
 
+      const res = await fetch(`/api/events/${safeId}`, {
+        method: "GET",
+        cache: "no-store",
+        signal,
+        headers: { Accept: "application/json" },
+      });
+
+      if (!res.ok) {
+        // try to parse JSON body (if any)
+        let jsonErr: any = null;
+        try { jsonErr = await res.json(); } catch { /* ignore parse errors */ }
+
+        if (res.status === 400) {
+          setError(jsonErr?.error ?? "Request tidak valid (ID mungkin tidak sesuai).");
+          setIsNotFound(false);
+          setEvent(null);
+          setLoading(false);
+          return;
+        }
+
+        if (res.status === 404) {
+          setIsNotFound(true);
+          setError(jsonErr?.error ?? "Kegiatan tidak ditemukan");
+          setEvent(null);
+          setLoading(false);
+          return;
+        }
+
+        throw new Error(jsonErr?.error ?? `HTTP ${res.status} ${res.statusText}`);
+      }
+
+      const data: EventApiShape = await res.json();
+
+      // Normalize images (server may return array of fileIds or objects)
+      const rawImages = Array.isArray(data.images) ? data.images : [];
+      const normalizedImages = rawImages
+        .map((r) => buildImageFromRaw(r as any, data.title || ""))
+        .filter((img): img is EventImage => !!img && !!img.url);
+
+      const normalized: NormalizedEvent = {
+        _id: (data._id as string) || (data.id as string) || id,
+        title: data.title || "Tanpa Judul",
+        description: data.description || "",
+        date: data.date,
+        time: data.time,
+        location: data.location || "-",
+        category: data.category || "-",
+        participants: typeof data.participants === "number" ? data.participants : undefined,
+        maxParticipants: typeof data.maxParticipants === "number" ? data.maxParticipants : undefined,
+        images: normalizedImages,
+        status: (data.status as NormalizedEvent["status"]) || "upcoming",
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
+      };
+
+      setEvent(normalized);
+      setError(null);
+      setIsNotFound(false);
+    } catch (err: any) {
+      if (err?.name === "AbortError") {
+        // request was aborted — ignore
+        return;
+      }
+      console.error("fetchEvent error:", err);
+      setError(err?.message ?? "Gagal memuat data kegiatan");
+      setEvent(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+
+  /* useEffect: only fetch when id is present/resolved */
+  useEffect(() => {
+    // If useParams returns undefined while hydrating, keep loading until it's resolved.
+    // If id is an empty string or falsy (resolved), show a helpful message.
+    if (typeof id === "undefined") {
+      // still resolving (do nothing; keep loading)
+      return;
+    }
+
+    if (!id) {
+      // param resolved but missing/empty -> show user-friendly error
+      setLoading(false);
+      setError("ID kegiatan tidak ditemukan di URL.");
+      setEvent(null);
+      setIsNotFound(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    fetchEvent(controller.signal);
+    return () => controller.abort();
+  }, [id, fetchEvent]);
 
   // Loading UI
   if (loading) {
@@ -229,19 +296,55 @@ useEffect(() => {
   if (error || !event) {
     const label = isNotFound ? "Kegiatan lagi di cari" : "Sedang Memuat Kegiatan";
     return (
-        <div className="min-h-screen flex items-center justify-center">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto" />
-      <p className="mt-4 text-gray-600">{label}</p>
-    </div>
-  </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto" />
+          <p className="mt-4 text-gray-600">{label}</p>
+        </div>
+      </div>
     );
   }
+
+  // Modified Image Gallery Section
+  const renderImageGallery = () => {
+    if (event?.images.length === 0) {
+      return (
+        <div className="w-full h-64 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
+          <ImageIcon className="w-16 h-16" />
+          <div className="ml-3">Tidak ada gambar</div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 gap-4">
+        <img
+          src={event!.images[0].url}
+          alt={event!.images[0].alt}
+          onClick={() => setSelectedImageIndex(0)}
+          className="w-full max-h-96 object-contain rounded-xl shadow mx-auto my-auto cursor-pointer hover:opacity-90 transition"
+        />
+        
+        {event!.images.length > 1 && (
+          <div className="grid grid-cols-3 gap-2">
+            {event!.images.slice(1).map((img, idx) => (
+              <img
+                key={img.fileId ?? img.url ?? idx}
+                src={img.url}
+                alt={img.alt}
+                onClick={() => setSelectedImageIndex(idx + 1)}
+                className="w-full max-h-32 object-contain rounded-lg mx-auto cursor-pointer hover:opacity-90 transition"
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // Success UI (kept your markup)
   return (
     <main className="min-h-screen bg-gray-50">
-      {/* ... same markup as before, using `event` ... */}
       <div className="bg-gradient-to-br from-green-600 via-green-500 to-blue-600 text-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="max-w-4xl mx-auto text-center">
@@ -274,23 +377,7 @@ useEffect(() => {
           </div>
 
           <div className="mb-8">
-            {event.images.length === 0 ? (
-              <div className="w-full h-64 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
-                <ImageIcon className="w-16 h-16" />
-                <div className="ml-3">Tidak ada gambar</div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-4">
-                <img src={event.images[0].url} alt={event.images[0].alt} className="w-full h-96 object-cover rounded-xl shadow" />
-                {event.images.length > 1 && (
-                  <div className="grid grid-cols-3 gap-2">
-                    {event.images.slice(1).map((img, idx) => (
-                      <img key={img.fileId ?? img.url ?? idx} src={img.url} alt={img.alt} className="w-full h-32 object-cover rounded-lg" />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+            {renderImageGallery()}
           </div>
 
           <section className="bg-white rounded-2xl shadow p-8">
@@ -341,6 +428,14 @@ useEffect(() => {
           </section>
         </div>
       </div>
+
+      {/* Image Modal Rendering */}
+      {selectedImageIndex !== null && event?.images && (
+        <ImageModal 
+          images={event.images} 
+          initialIndex={selectedImageIndex} 
+        />
+      )}
     </main>
   );
 }

@@ -767,7 +767,7 @@ const GalleryManagementPage: React.FC = () => {
               disabled={saving || uploadingImage}
             >
               <Plus className="w-5 h-5" />
-              Tambah
+              Buat Galeri
             </button>
           </div>
         </div>

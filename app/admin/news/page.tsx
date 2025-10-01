@@ -1,22 +1,10 @@
 "use client";
 import React, { memo, useState, useEffect, useCallback, ChangeEvent } from "react";
-import {
-  Plus,
-  Edit2,
-  Trash2,
-  Save,
-  X,
-  Upload,
-  Search,
-  Filter,
-  Calendar,
-  User,
-  Tag,
-  FileText,
-  ArrowLeft,
-} from "lucide-react";
+import { Plus, Edit2, Trash2, Save, X, Upload, Search, Filter, Calendar, User, Tag, FileText, ArrowLeft} from "lucide-react";
 import AdminLoading from "@/app/admin/loading";
 import Link from "next/link";
+import dynamic from 'next/dynamic';
+import 'easymde/dist/easymde.min.css';
 
 interface NewsItem {
   _id?: string;
@@ -232,6 +220,9 @@ const NewsList = memo(
   )
 );
 
+const SimpleMDE = dynamic(() => import('react-simplemde-editor'), {
+  ssr: false
+});
 // NewsForm Component
 interface NewsFormProps {
   newsForm: NewsItem;
@@ -268,6 +259,21 @@ const NewsForm: React.FC<NewsFormProps> = ({
   saving,
   isEditing,
 }) => {
+  const simpleMDEOptions = {
+    spellChecker: false,
+    placeholder: "Tulis konten berita dengan markdown...",
+    status: false,
+    autofocus: false,
+    autoRefresh: true,
+    maxHeight: "300px",
+    minHeight: "200px",
+    uploadImage: true,
+    toolbar: [
+      'bold', 'italic', 'heading', '|', 
+      'quote', 'unordered-list', 'ordered-list', '|',
+      'preview', 'side-by-side', 'fullscreen'
+    ]
+  };
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm transition-opacity duration-300">
       <div className="bg-white rounded-2xl max-w-3xl w-full overflow-hidden max-h-[90vh] shadow-xl transform transition-all duration-300 ease-in-out">
@@ -343,21 +349,17 @@ const NewsForm: React.FC<NewsFormProps> = ({
           </div>
 
           {/* Isi Konten */}
-          <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Isi Konten *</label>
-            <textarea
-              rows={6}
-              value={newsForm.content}
-              onChange={(e) => setNewsForm({ ...newsForm, content: e.target.value })}
-              required
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 resize-y placeholder-gray-400 min-h-[150px]"
-              maxLength={10000}
-              placeholder="Masukkan isi konten berita"
-            />
-            <div className="absolute bottom-3 right-3 bg-white px-2 rounded text-xs text-gray-500">
-              {newsForm.content.length}/10000
-            </div>
-          </div>
+           <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Isi Konten *
+        </label>
+        <SimpleMDE 
+          value={newsForm.content}
+          onChange={(value) => setNewsForm({ content: value })}
+          // options={simpleMDEOptions}
+          className="custom-simplemde-container"
+        />
+      </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Kategori */}

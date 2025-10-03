@@ -19,6 +19,7 @@ import {
   AlertCircle,
   RefreshCw,
   ArrowRight,
+  PlayCircle,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -31,6 +32,40 @@ interface GalleryItem {
   date: string;
   status: "draft" | "published" | "archived";
 }
+
+// New Video Item Interface
+interface VideoItem {
+  id: string;
+  title: string;
+  description: string;
+  youtubeUrl: string; // YouTube embed URL (e.g., https://www.youtube.com/embed/VIDEO_ID)
+  date: string;
+}
+
+// Static Video Data
+const staticVideos: VideoItem[] = [
+  {
+    id: "video1",
+    title: "Kegiatan Senam Merdeka 2025",
+    description: "Video highlight dari acara senam merdeka di RPTRA Kebon Melati, melibatkan komunitas lokal.",
+    youtubeUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    date: "2025-08-17",
+  },
+  {
+    id: "video2",
+    title: "Jumat Curhat Bersama Warga",
+    description: "Dokumentasi kegiatan Jumat Curhat, berbagi cerita dan solusi bersama warga.",
+    youtubeUrl: "https://www.youtube.com/embed/9bZkp7q19f0",
+    date: "2025-07-10",
+  },
+  {
+    id: "video3",
+    title: "Workshop Literasi Kesehatan",
+    description: "Rekaman workshop edukasi kesehatan untuk keluarga di RPTRA Kebon Melati.",
+    youtubeUrl: "https://www.youtube.com/embed/3f5dAiyzLdw",
+    date: "2025-06-15",
+  },
+];
 
 const getImageUrl = (id: string): string => {
   if (!id || id.length === 0) return "/placeholder-image.jpg";
@@ -158,6 +193,41 @@ const GalleryCard: React.FC<{ item: GalleryItem }> = ({ item }) => {
         <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium shadow-sm hover:shadow-md transition-shadow rounded-lg">
           <Link href={`/galeri/${item.id}`}>
             Lihat Detail
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Link>
+        </Button>
+      </div>
+    </Card>
+  );
+};
+
+// Video Card Component
+const VideoCard: React.FC<{ item: VideoItem }> = ({ item }) => {
+  return (
+    <Card className="overflow-hidden group cursor-pointer rounded-xl border border-gray-200 shadow-sm hover:shadow-lg transition-shadow duration-300">
+      <div className="aspect-[16/9] relative">
+        <iframe
+          src={item.youtubeUrl}
+          title={item.title}
+          className="w-full h-full rounded-t-xl"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          loading="lazy"
+        />
+      </div>
+      <div className="p-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{item.title}</h3>
+        <p className="text-gray-600 text-sm mb-3 line-clamp-3">{item.description}</p>
+        <p className="text-gray-500 text-xs mb-4 flex items-center gap-1">
+          <Calendar className="w-3 h-3" />
+          {formatDateForDisplay(item.date)}
+        </p>
+        <Button
+          asChild
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium shadow-sm hover:shadow-md transition-shadow rounded-lg"
+        >
+          <Link href={item.youtubeUrl} target="_blank" rel="noopener noreferrer">
+            Tonton di YouTube
             <ArrowRight className="w-4 h-4 ml-2" />
           </Link>
         </Button>
@@ -343,6 +413,30 @@ export default function GalleryPage() {
             ))}
           </div>
         )}
+
+        {/* Video Section */}
+        <section className="mt-12 py-10">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900">Galeri Vidio</h2>
+            <Button>
+              <Link href="www.youtube.com" target="_blank" rel="noopener noreferrer">
+                Lihat Semua di Youtube
+              </Link>
+            </Button>
+          </div>
+          {staticVideos.length === 0 ? (
+            <Card className="max-w-md mx-auto p-8 bg-white text-center">
+              <PlayCircle className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+              <h3 className="text-l font-semibold text-gray-900 mb-2">Belum ada Vidio</h3>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {staticVideos.map((video) => (
+                <VideoCard key={video.id} item={video}/>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );

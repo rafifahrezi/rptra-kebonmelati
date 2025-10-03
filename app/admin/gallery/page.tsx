@@ -1,25 +1,8 @@
 "use client";
 
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  ChangeEvent,
-  FormEvent,
-} from "react";
+import React, { useState, useEffect, useCallback, ChangeEvent, FormEvent } from "react";
 import Link from "next/link";
-import {
-  Plus,
-  Edit,
-  Trash2,
-  X,
-  ArrowLeft,
-  Loader2,
-  AlertCircle,
-  Check,
-  Upload,
-  Calendar,
-} from "lucide-react";
+import { Plus, Edit, Trash2, X, ArrowLeft, Loader2, AlertCircle, Check, Upload, Calendar } from "lucide-react";
 import AdminLoading from "@/app/admin/loading";
 
 // ==================================================
@@ -35,7 +18,7 @@ interface Gallery {
   title: string;
   description?: string;
   category?: string;
-  date: string; // Format: YYYY-MM-DD (untuk input date)
+  date: string; 
   images: string[]; // Array ID GridFS
   status: "draft" | "published" | "archived";
   createdAt?: string;

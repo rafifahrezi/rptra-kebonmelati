@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const data = await request.json();
 
     // Validasi field wajib (images sekarang array ID GridFS)
-    const requiredFields = ["title", "category", "date", "location", "status", "images"];
+    const requiredFields = ["title", "category", "date", "time", "location", "status", "images"];
     for (const field of requiredFields) {
       if (!data[field]) {
         return NextResponse.json({ error: `${field} wajib diisi` }, { status: 400 });

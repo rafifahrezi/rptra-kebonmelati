@@ -2,36 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { RequestData } from "@/types/types";
-import { 
-  Check, 
-  X, 
-  Clock, 
-  MoreHorizontal, 
-  AlertCircle, 
-  Calendar, 
-  MapPin, 
-  Users, 
-  User,
-  Phone,
-  Building,
-  Target,
-  BadgeIcon
-} from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogClose,
-} from "@/components/ui/dialog";
+import { Check, X, Clock, MoreHorizontal, AlertCircle, Calendar, MapPin, Users, User, Phone, Building, Target, BadgeIcon, Trash2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "../ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
@@ -85,6 +59,7 @@ const RequestList: React.FC<RequestListProps> = ({ selectedDate }) => {
   const [error, setError] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<RequestData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [snackbar, setSnackbar] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const fetchRequests = async () => {
@@ -147,6 +122,42 @@ const RequestList: React.FC<RequestListProps> = ({ selectedDate }) => {
     } catch (err) {
       console.error("Error updating status:", err);
       setSnackbar({ message: "Failed to update status", type: "error" });
+    }
+  };
+
+  const handleDeleteRequest = async () => {
+    if (!selectedRequest) return;
+
+    try {
+      const response = await fetch("/api/request", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: selectedRequest._id }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete request");
+      }
+
+      // Optimistic update
+      setRequests((prev) => prev.filter((r) => r._id !== selectedRequest._id));
+      
+      // Close modal and delete dialog
+      closeModal();
+      setIsDeleteDialogOpen(false);
+
+      setSnackbar({ 
+        message: "Permintaan berhasil dihapus", 
+        type: "success" 
+      });
+    } catch (err) {
+      console.error("Error deleting request:", err);
+      setSnackbar({ 
+        message: "Gagal menghapus permintaan", 
+        type: "error" 
+      });
     }
   };
 
@@ -339,9 +350,41 @@ const RequestList: React.FC<RequestListProps> = ({ selectedDate }) => {
               </div>
             </div>
           )}
-          <DialogClose asChild>
-            <Button variant="outline" className="w-full mt-4 shadow-sm hover:shadow-md transition-shadow">Tutup</Button>
-          </DialogClose>
+          <DialogFooter className="flex justify-between items-center">
+            {/* Alert Dialog untuk Konfirmasi Hapus */}
+            <AlertDialog 
+              open={isDeleteDialogOpen} 
+              onOpenChange={setIsDeleteDialogOpen}
+            >
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Hapus Permintaan
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Anda yakin ingin menghapus permintaan?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tindakan ini tidak dapat dibatalkan. Permintaan akan dihapus secara permanen.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Batal</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDeleteRequest}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Hapus
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <DialogClose asChild>
+              <Button variant="outline">Tutup</Button>
+            </DialogClose>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

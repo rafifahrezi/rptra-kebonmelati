@@ -8,6 +8,7 @@ export interface IEvent extends Document {
   description: string;
   category: string;
   date: string;
+  time: string;
   location: string;
   status: EventStatus;
   images: string[];
@@ -21,6 +22,7 @@ const EventSchema = new Schema<IEvent>(
     description: { type: String, default: "" },
     category: { type: String, required: true },
     date: { type: String, required: true },
+    time: { type: String, required: true },
     location: { type: String, required: true },
     status: { type: String, enum: ["upcoming", "ongoing", "finished"], default: "upcoming" },
     images: { type: [String], default: [] },

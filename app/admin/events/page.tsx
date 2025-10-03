@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Upload,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import AdminLoading from "@/app/admin/loading";
@@ -120,7 +121,8 @@ interface EventDoc {
   title: string;
   description: string;
   category: string;
-  date: string; // YYYY-MM-DD
+  date: string;
+  time: string;
   location: string;
   status: EventStatus;
   images: string[];
@@ -149,6 +151,7 @@ const emptyForm: Omit<EventDoc, "id" | "_id"> = {
   description: "",
   category: "",
   date: "",
+  time: "",
   location: "",
   status: "upcoming",
   images: [],
@@ -240,6 +243,10 @@ const EventCard: React.FC<{
           <div className="flex items-center text-sm text-gray-600">
             <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
             <span className="line-clamp-1">{event.location}</span>
+          </div>
+          <div className="flex items-center text-sm text-gray-600">
+            <Clock className="w-4 h-4 mr-2 flex-shrink-0" />
+            <span className="line-clamp-1">{event.time}</span>
           </div>
         </div>
         {event.description && (
@@ -378,6 +385,13 @@ const EventModal: React.FC<{
                         <p className="font-medium text-gray-900">{event.location}</p>
                       </div>
                     </div>
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-5 h-5 text-green-600" />
+                      <div>
+                        <p className="text-sm text-gray-500">Waktu</p>
+                        <p className="font-medium text-gray-900">{event.time}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -433,6 +447,19 @@ const EventModal: React.FC<{
                       onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))}
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
                       placeholder="RPTRA Kebon Melati"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Waktu <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={form.time}
+                      onChange={(e) => setForm((prev) => ({ ...prev, time: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                      placeholder="07.00-10.00"
                       required
                     />
                   </div>
@@ -681,6 +708,7 @@ const EventManagement: React.FC = () => {
     if (!form.title?.trim()) return "Judul wajib diisi";
     if (!form.category) return "Kategori wajib dipilih";
     if (!form.date) return "Tanggal wajib diisi";
+    if (!form.time) return "Jam wajib diisi";
     if (!form.location?.trim()) return "Lokasi wajib diisi";
     if (!form.status) return "Status wajib dipilih";
     return null;

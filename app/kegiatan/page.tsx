@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowRight,
+  Clock,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -307,6 +308,13 @@ const EventCard: React.FC<{ event: EventItem }> = ({ event }) => {
             <span className="text-gray-700">{event.location}</span>
           </div>
         </div>
+        <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
+          <div className="flex items-center gap-3">
+            <Clock className="w-4 h-4 text-green-600" />
+            <span className="text-gray-700">{event.time}</span>
+          </div>
+        </div>
+        
 
         {hasValidId ? (
           <Link

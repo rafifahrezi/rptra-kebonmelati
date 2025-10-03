@@ -102,17 +102,13 @@ export default function EventDetailPage() {
   const ImageModal = ({ images, initialIndex }: { images: EventImage[], initialIndex: number }) => {
     const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
-    const handleNext = () => {
-      setCurrentIndex((prev) => 
-        prev === images.length - 1 ? 0 : prev + 1
-      );
-    };
+    const handleNext = useCallback(() => {
+      setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+    }, [images.length]);
 
-    const handlePrev = () => {
-      setCurrentIndex((prev) => 
-        prev === 0 ? images.length - 1 : prev - 1
-      );
-    };
+    const handlePrev = useCallback(() => {
+      setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+    }, [images.length]);
 
     const currentImage = images[currentIndex];
 
@@ -120,10 +116,14 @@ export default function EventDetailPage() {
       <div 
         className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
         onClick={() => setSelectedImageIndex(null)}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Image Viewer Modal"
       >
         <button 
           className="absolute top-4 right-4 text-white p-2 hover:bg-white/20 rounded-full"
           onClick={() => setSelectedImageIndex(null)}
+          aria-label="Close modal"
         >
           <X className="w-8 h-8" />
         </button>
@@ -134,6 +134,7 @@ export default function EventDetailPage() {
             e.stopPropagation();
             handlePrev();
           }}
+          aria-label="Previous image"
         >
           <ChevronLeft className="w-8 h-8 text-white" />
         </button>
@@ -144,6 +145,7 @@ export default function EventDetailPage() {
             e.stopPropagation();
             handleNext();
           }}
+          aria-label="Next image"
         >
           <ChevronRight className="w-8 h-8 text-white" />
         </button>
@@ -154,6 +156,7 @@ export default function EventDetailPage() {
             alt={currentImage.alt} 
             className="max-w-full max-h-full object-contain"
             onClick={(e) => e.stopPropagation()}
+            loading="eager"
           />
         </div>
 
@@ -168,7 +171,6 @@ export default function EventDetailPage() {
   };
 
   const fetchEvent = useCallback(async (signal?: AbortSignal) => {
-    // Guard: don't call API when id is falsy/empty
     if (!id) {
       setError("ID kegiatan tidak ada.");
       setIsNotFound(false);
@@ -182,7 +184,6 @@ export default function EventDetailPage() {
     setIsNotFound(false);
 
     try {
-      // encodeURIComponent protects against special chars in id
       const safeId = encodeURIComponent(id);
 
       const res = await fetch(`/api/events/${safeId}`, {
@@ -193,9 +194,8 @@ export default function EventDetailPage() {
       });
 
       if (!res.ok) {
-        // try to parse JSON body (if any)
         let jsonErr: any = null;
-        try { jsonErr = await res.json(); } catch { /* ignore parse errors */ }
+        try { jsonErr = await res.json(); } catch {}
 
         if (res.status === 400) {
           setError(jsonErr?.error ?? "Request tidak valid (ID mungkin tidak sesuai).");
@@ -218,7 +218,6 @@ export default function EventDetailPage() {
 
       const data: EventApiShape = await res.json();
 
-      // Normalize images (server may return array of fileIds or objects)
       const rawImages = Array.isArray(data.images) ? data.images : [];
       const normalizedImages = rawImages
         .map((r) => buildImageFromRaw(r as any, data.title || ""))
@@ -244,10 +243,7 @@ export default function EventDetailPage() {
       setError(null);
       setIsNotFound(false);
     } catch (err: any) {
-      if (err?.name === "AbortError") {
-        // request was aborted — ignore
-        return;
-      }
+      if (err?.name === "AbortError") return;
       console.error("fetchEvent error:", err);
       setError(err?.message ?? "Gagal memuat data kegiatan");
       setEvent(null);
@@ -256,18 +252,10 @@ export default function EventDetailPage() {
     }
   }, [id]);
 
-
-  /* useEffect: only fetch when id is present/resolved */
   useEffect(() => {
-    // If useParams returns undefined while hydrating, keep loading until it's resolved.
-    // If id is an empty string or falsy (resolved), show a helpful message.
-    if (typeof id === "undefined") {
-      // still resolving (do nothing; keep loading)
-      return;
-    }
+    if (typeof id === "undefined") return;
 
     if (!id) {
-      // param resolved but missing/empty -> show user-friendly error
       setLoading(false);
       setError("ID kegiatan tidak ditemukan di URL.");
       setEvent(null);
@@ -280,7 +268,6 @@ export default function EventDetailPage() {
     return () => controller.abort();
   }, [id, fetchEvent]);
 
-  // Loading UI
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -292,7 +279,6 @@ export default function EventDetailPage() {
     );
   }
 
-  // Error / Not found
   if (error || !event) {
     const label = isNotFound ? "Kegiatan lagi di cari" : "Sedang Memuat Kegiatan";
     return (
@@ -305,9 +291,9 @@ export default function EventDetailPage() {
     );
   }
 
-  // Modified Image Gallery Section
+  // Refactored Image Gallery with best practices
   const renderImageGallery = () => {
-    if (event?.images.length === 0) {
+    if (event.images.length === 0) {
       return (
         <div className="w-full h-64 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
           <ImageIcon className="w-16 h-16" />
@@ -317,23 +303,27 @@ export default function EventDetailPage() {
     }
 
     return (
-      <div className="grid grid-cols-1 gap-4">
+      <div className="space-y-6">
+        {/* Main photo - first image large */}
         <img
-          src={event!.images[0].url}
-          alt={event!.images[0].alt}
+          src={event.images[0].url}
+          alt={event.images[0].alt}
           onClick={() => setSelectedImageIndex(0)}
-          className="w-full max-h-96 object-contain rounded-xl shadow mx-auto my-auto cursor-pointer hover:opacity-90 transition"
+          className="w-full max-h-[600px] object-contain rounded-xl shadow-lg cursor-pointer hover:opacity-95 transition-opacity duration-200 mx-auto"
+          loading="eager"
         />
         
-        {event!.images.length > 1 && (
-          <div className="grid grid-cols-3 gap-2">
-            {event!.images.slice(1).map((img, idx) => (
+        {/* Remaining photos below in responsive grid */}
+        {event.images.length > 1 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {event.images.slice(1).map((img, idx) => (
               <img
                 key={img.fileId ?? img.url ?? idx}
                 src={img.url}
                 alt={img.alt}
                 onClick={() => setSelectedImageIndex(idx + 1)}
-                className="w-full max-h-32 object-contain rounded-lg mx-auto cursor-pointer hover:opacity-90 transition"
+                className="w-full h-auto max-h-[400px] object-contain rounded-xl shadow-md cursor-pointer hover:opacity-95 transition-opacity duration-200 mx-auto"
+                loading="lazy"
               />
             ))}
           </div>
@@ -342,7 +332,6 @@ export default function EventDetailPage() {
     );
   };
 
-  // Success UI (kept your markup)
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="bg-gradient-to-br from-green-600 via-green-500 to-blue-600 text-white">

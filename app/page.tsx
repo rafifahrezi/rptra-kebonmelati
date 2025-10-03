@@ -2,9 +2,11 @@
 
 import React, { memo, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Calendar, MapPin, Users, Heart, Book, Activity, ChevronRight, ChevronLeft, Clock } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { MapPin, Users, Heart, Book, Activity, ChevronRight, ChevronLeft, Clock, CalendarIcon, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button"
 import VisitsSection from "@/components/VisitsSection";
+import Calender from "@/components/admin/Calender";
 import { EventItem } from "@/types/event";
 import { getImageUrl } from "@/lib/image";
 import { normalizeAndSortEvents } from "@/lib/events";
@@ -204,14 +206,14 @@ const EventsSection = memo(() => {
       const res = await fetch("/api/events?status=published", {
         cache: "no-store",
       });
-      
+
       if (!res.ok) throw new Error("Gagal mengambil data kegiatan");
-      
+
       const rawData = await res.json();
-      
+
       // ✅ Gunakan fungsi reusable
       const normalizedEvents = normalizeAndSortEvents(rawData, 3);
-      
+
       setEvents(normalizedEvents);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan");
@@ -223,7 +225,7 @@ const EventsSection = memo(() => {
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
-  
+
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
@@ -267,7 +269,7 @@ const EventsSection = memo(() => {
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900">Kegiatan Terbaru</h2>
           <Link href="/kegiatan">
-            <Button variant="outline">Lihat Semua</Button>
+            <Button variant="outline">Lihat Semua Kegiatan</Button>
           </Link>
         </div>
 
@@ -286,7 +288,7 @@ const EventsSection = memo(() => {
               </div>
               <div className="p-6">
                 <div className="flex items-center text-sm text-gray-500 mb-2">
-                  <Calendar className="w-4 h-4 mr-1" />
+                  <CalendarIcon className="w-4 h-4 mr-1" />
                   <span>{new Date(event.date).toLocaleDateString("id-ID")}</span>
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2">
@@ -302,6 +304,25 @@ const EventsSection = memo(() => {
             </div>
           ))}
         </div>
+      </div>
+    </section>
+  );
+});
+
+// Calendar Section
+const CalendarSection = memo(() => {
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  const handleCalendarDateClick = useCallback((date: string) => {
+    setSelectedDate(date);
+  }, []);
+  return (
+    <section className="py-16 bg-white">
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-3xl font-bold text-gray-900">Jadwal Kegiatan</h2>
+        </div>
+        <Calender onDateClick={handleCalendarDateClick} />
       </div>
     </section>
   );
@@ -520,6 +541,7 @@ export default function Home() {
         <FeaturesSection features={features} />
         <EventsSection />
         <VisitsSection />
+        <CalendarSection />
         <LocationSection />
         <CtaSection />
       </div>

@@ -9,6 +9,7 @@ interface EventData {
   _id: string;
   title: string;
   date: string;
+  time: string;
   // Tambahkan field lain sesuai kebutuhan
 }
 
@@ -254,116 +255,117 @@ const Calendar: React.FC<CalendarProps> = memo(({ onDateClick }) => {
 
       {/* Days Grid */}
       <div 
-        className="grid grid-cols-7 gap-2"
-        role="grid"
-        aria-label={`Hari dalam bulan ${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
+  className="grid grid-cols-7 gap-2"
+  role="grid"
+  aria-label={`Hari dalam bulan ${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
+>
+  {days.map((day, idx) => {
+    const { visits: visitsForDay, events: eventsForDay } = getDataForDate(day);
+    const today = isToday(day);
+    const totalActivities = visitsForDay.length + eventsForDay.length;
+    const hasActivities = totalActivities > 0;
+
+    return (
+      <button
+        key={idx}
+        type="button"
+        onClick={() => day && onDateClick(`${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`)}
+        disabled={!day}
+        className={`
+          min-h-[100px] p-3 rounded-xl flex flex-col items-center justify-start text-sm transition-all
+          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+          ${day
+            ? "cursor-pointer border border-gray-200 hover:border-blue-300 hover:shadow-md hover:scale-[1.02]"
+            : "bg-transparent cursor-default"
+          }
+          ${today 
+            ? "bg-blue-50 border-blue-300 shadow-sm ring-2 ring-blue-200" 
+            : "bg-white"
+          }
+          ${hasActivities ? "ring-1 ring-gray-100" : ""}
+        `}
+        aria-label={
+          day 
+            ? `Tanggal ${day} ${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}, ${totalActivities} kegiatan` 
+            : undefined
+        }
+        aria-disabled={!day}
+        role="gridcell"
       >
-        {days.map((day, idx) => {
-          const { visits: visitsForDay, events: eventsForDay } = getDataForDate(day);
-          const today = isToday(day);
-          const totalActivities = visitsForDay.length + eventsForDay.length;
-          const hasActivities = totalActivities > 0;
-
-          return (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => day && onDateClick(`${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`)}
-              disabled={!day}
+        {day && (
+          <>
+            <span 
               className={`
-                min-h-[100px] p-3 rounded-xl flex flex-col items-center justify-start text-sm transition-all
-                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                ${day
-                  ? "cursor-pointer border border-gray-200 hover:border-blue-300 hover:shadow-md hover:scale-[1.02]"
-                  : "bg-transparent cursor-default"
-                }
+                font-semibold mb-2 px-2 py-1 rounded-full text-sm
                 ${today 
-                  ? "bg-blue-50 border-blue-300 shadow-sm ring-2 ring-blue-200" 
-                  : "bg-white"
+                  ? "bg-blue-600 text-white" 
+                  : "text-gray-700 hover:bg-gray-100"
                 }
-                ${hasActivities ? "ring-1 ring-gray-100" : ""}
               `}
-              aria-label={
-                day 
-                  ? `Tanggal ${day} ${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}, ${totalActivities} kegiatan` 
-                  : undefined
-              }
-              aria-disabled={!day}
-              role="gridcell"
             >
-              {day && (
-                <>
-                  <span 
-                    className={`
-                      font-semibold mb-2 px-2 py-1 rounded-full text-sm
-                      ${today 
-                        ? "bg-blue-600 text-white" 
-                        : "text-gray-700 hover:bg-gray-100"
-                      }
-                    `}
-                  >
-                    {day}
-                  </span>
-                  
-                  <div className="flex flex-col space-y-1.5 w-full max-w-full">
-                    {/* Tampilkan kunjungan */}
-                    {visitsForDay.slice(0, 2).map((visit, i) => (
-                      <div
-                        key={`visit-${i}`}
-                        className={`
-                          text-xs rounded-lg px-2 py-1 text-center text-white font-medium truncate
-                          shadow-sm transition-colors
-                          ${visit.status === "completed"
-                            ? "bg-green-500 hover:bg-green-600"
-                            : visit.status === "scheduled"
-                            ? "bg-blue-500 hover:bg-blue-600"
-                            : visit.status === "cancelled"
-                            ? "bg-red-500 hover:bg-red-600"
-                            : "bg-gray-500 hover:bg-gray-600"
-                          }
-                        `}
-                        title={`Kunjungan: ${visit.namaInstansi}, Peserta: ${visit.jumlahPeserta}, Status: ${visit.status}`}
-                      >
-                        {visit.namaInstansi}
-                      </div>
-                    ))}
-                    
-                    {/* Tampilkan events */}
-                    {eventsForDay.slice(0, 2).map((event, i) => (
-                      <div
-                        key={`event-${i}`}
-                        className="text-xs rounded-lg px-2 py-1 text-center text-white bg-purple-500 hover:bg-purple-600 font-medium truncate shadow-sm transition-colors"
-                        title={`Kegiatan: ${event.title}`}
-                      >
-                        {event.title}
-                      </div>
-                    ))}
-                    
-                    {/* Tampilkan jumlah tambahan jika ada */}
-                    {(totalActivities > 2) && (
-                      <div className="text-xs text-gray-500 text-center font-medium bg-gray-100 rounded-lg px-2 py-1">
-                        +{totalActivities - 2} kegiatan lainnya
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Activity indicator dot untuk hari dengan kegiatan */}
-                  {hasActivities && totalActivities <= 2 && (
-                    <div className="absolute bottom-1 right-1 flex space-x-1">
-                      {visitsForDay.length > 0 && (
-                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                      )}
-                      {eventsForDay.length > 0 && (
-                        <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
-                      )}
-                    </div>
-                  )}
-                </>
+              {day}
+            </span>
+            
+            <div className="flex flex-col space-y-1.5 w-full max-w-full">
+              {/* Tampilkan kunjungan */}
+              {visitsForDay.slice(0, 2).map((visit, i) => (
+                <div
+                  key={`visit-${i}`}
+                  className={`
+                    text-xs rounded-lg px-2 py-1 text-center text-white font-medium truncate
+                    shadow-sm transition-colors
+                    ${visit.status === "completed"
+                      ? "bg-green-500 hover:bg-green-600"
+                      : visit.status === "scheduled"
+                      ? "bg-blue-500 hover:bg-blue-600"
+                      : visit.status === "cancelled"
+                      ? "bg-red-500 hover:bg-red-600"
+                      : "bg-gray-500 hover:bg-gray-600"
+                    }
+                  `}
+                  title={`Kunjungan: ${visit.namaInstansi}, Peserta: ${visit.jumlahPeserta}, Status: ${visit.status}`}
+                >
+                  {visit.namaInstansi}
+                </div>
+              ))}
+              
+              {/* Tampilkan events dengan waktu */}
+              {eventsForDay.slice(0, 2).map((event, i) => (
+                <div
+                  key={`event-${i}`}
+                  className="text-xs rounded-lg px-2 py-1 text-center text-white bg-purple-500 hover:bg-purple-600 font-medium truncate shadow-sm transition-colors"
+                  title={`Kegiatan: ${event.title}, Waktu: ${event.time}`}
+                >
+                  <div className="truncate">{event.title}</div>
+                  <div className="text-[10px] opacity-80">{event.time}</div>
+                </div>
+              ))}
+              
+              {/* Tampilkan jumlah tambahan jika ada */}
+              {(totalActivities > 2) && (
+                <div className="text-xs text-gray-500 text-center font-medium bg-gray-100 rounded-lg px-2 py-1">
+                  +{totalActivities - 2} kegiatan lainnya
+                </div>
               )}
-            </button>
-          );
-        })}
-      </div>
+            </div>
+
+            {/* Activity indicator dot untuk hari dengan kegiatan */}
+            {hasActivities && totalActivities <= 2 && (
+              <div className="absolute bottom-1 right-1 flex space-x-1">
+                {visitsForDay.length > 0 && (
+                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                )}
+                {eventsForDay.length > 0 && (
+                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </button>
+    );
+  })}
+</div>
 
       {/* Legend */}
       <div className="mt-6 pt-4 border-t border-gray-200">

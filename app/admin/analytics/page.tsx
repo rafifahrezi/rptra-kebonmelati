@@ -4,11 +4,12 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Users, AlertCircle, Calendar as CalendarIcon } from "lucide-react";
 import { VisitDataFromAPI, VisitFormData } from "@/types/types";
+import { formatDateOnly } from "@/components/admin/FormattedDate";
 import AdminLoading from "@/app/admin/loading";
 import RequestList from "@/components/admin/RequestList";
-import { formatDateOnly } from "@/components/admin/FormattedDate";
 import VisitTable from "@/components/admin/VisitTable";    // Import VisitTable component
 import Calender from "@/components/admin/Calender";        // Import Calendar component (Code 2)
+import ContactMessagesPage from "@/components/admin/PesanKontak";        // Import Calendar component (Code 2)
 
 type ModalMode = "create" | "edit";
 
@@ -54,99 +55,99 @@ const VisitModal: React.FC<{
   onSubmit,
   onFormChange,
 }) => {
-  if (!show) return null;
+    if (!show) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg animate-fadeIn">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">
-            {mode === "create" ? "Tambah Data Kunjungan" : "Edit Data Kunjungan"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 p-1"
-            aria-label="Tutup modal"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        {formError && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            {formError}
-          </div>
-        )}
-
-        <form onSubmit={onSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tanggal Kunjungan <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              name="date"
-              value={formData.date}
-              onChange={onFormChange}
-              required
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {VISITOR_FIELDS.map(({ key, label, description }) => (
-              <div key={key}>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {label}
-                  <span className="text-xs text-gray-500 ml-1">({description})</span>
-                </label>
-                <input
-                  type="number"
-                  name={key}
-                  value={formData[key as keyof VisitFormData]}
-                  onChange={onFormChange}
-                  min="0"
-                  step="1"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="0"
-                />
-              </div>
-            ))}
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4 border-t">
+    return (
+      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg animate-fadeIn">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-900">
+              {mode === "create" ? "Tambah Data Kunjungan" : "Edit Data Kunjungan"}
+            </h2>
             <button
-              type="button"
               onClick={onClose}
-              disabled={isSubmitting}
-              className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+              className="text-gray-400 hover:text-gray-600 p-1"
+              aria-label="Tutup modal"
             >
-              Batal
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Menyimpan...
-                </>
-              ) : (
-                <>
-                  {mode === "create" ? "Tambah Data" : "Update Data"}
-                </>
-              )}
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
-        </form>
+
+          {formError && (
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              {formError}
+            </div>
+          )}
+
+          <form onSubmit={onSubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tanggal Kunjungan <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                name="date"
+                value={formData.date}
+                onChange={onFormChange}
+                required
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {VISITOR_FIELDS.map(({ key, label, description }) => (
+                <div key={key}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {label}
+                    <span className="text-xs text-gray-500 ml-1">({description})</span>
+                  </label>
+                  <input
+                    type="number"
+                    name={key}
+                    value={formData[key as keyof VisitFormData]}
+                    onChange={onFormChange}
+                    min="0"
+                    step="1"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    placeholder="0"
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Menyimpan...
+                  </>
+                ) : (
+                  <>
+                    {mode === "create" ? "Tambah Data" : "Update Data"}
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 // DeleteModal (biarkan di sini juga)
 const DeleteModal: React.FC<{
@@ -175,7 +176,7 @@ const DeleteModal: React.FC<{
             ? Tindakan ini tidak dapat dibatalkan.
           </p>
         </div>
-        
+
         <div className="flex justify-center gap-3">
           <button
             onClick={onCancel}
@@ -215,15 +216,14 @@ const Snackbar: React.FC<{
 
   return (
     <div
-      className={`fixed right-4 bottom-4 px-4 py-3 rounded shadow-lg text-white font-medium ${
-        type === 'success' ? 'bg-green-600' : 'bg-red-600'
-      }`}
+      className={`fixed right-4 bottom-4 px-4 py-3 rounded shadow-lg text-white font-medium ${type === 'success' ? 'bg-green-600' : 'bg-red-600'
+        }`}
       role="alert"
     >
       {message}
     </div>
   );
-};  
+};
 export default function MainPage() {
   const [visits, setVisits] = useState<VisitDataFromAPI[]>([]);
   const [loading, setLoading] = useState(false);
@@ -242,26 +242,26 @@ export default function MainPage() {
 
   // Snackbar state
   const [snackbar, setSnackbar] = useState<{
-      open: boolean;
-      message: string;
-      type: 'success' | 'error';
-    }>({
-      open: false,
-      message: '',
-      type: 'success',
-    });
+    open: boolean;
+    message: string;
+    type: 'success' | 'error';
+  }>({
+    open: false,
+    message: '',
+    type: 'success',
+  });
 
   // New state: view mode ('list' or 'calendar')
   const [view, setView] = useState<"list" | "calendar">("list");
 
- const openSnackbar = useCallback((message: string, type: 'success' | 'error') => {
-     setSnackbar((prev) => ({
-       ...prev,
-       open: true,
-       message,
-       type,
-     }));
-   }, []);
+  const openSnackbar = useCallback((message: string, type: 'success' | 'error') => {
+    setSnackbar((prev) => ({
+      ...prev,
+      open: true,
+      message,
+      type,
+    }));
+  }, []);
 
 
   const closeSnackbar = () => {
@@ -530,7 +530,7 @@ export default function MainPage() {
     if (view === "calendar") {
       setFilterDate(null);
     }
-  }, [view]); 
+  }, [view]);
 
   if (loading) return <LoadingSpinner />;
 
@@ -575,13 +575,13 @@ export default function MainPage() {
           </div>
         </div>
       </div>
-      
+
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-12 py-8">
         {view === "calendar" ? (
-          <Calender 
-    onDateClick={handleCalendarDateClick} 
-  />
+          <Calender
+            onDateClick={handleCalendarDateClick}
+          />
         ) : (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-6 border-b border-gray-200">
@@ -612,12 +612,14 @@ export default function MainPage() {
                 openDeleteModal={openDeleteModal}
               />
             </div>
-            <RequestList 
-              selectedDate={selectedDate} 
+            <RequestList
+              selectedDate={selectedDate}
             />
           </div>
         )}
+        <ContactMessagesPage />
       </div>
+
 
       {/* Modals */}
       <VisitModal

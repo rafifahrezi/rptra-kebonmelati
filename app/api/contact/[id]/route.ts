@@ -8,7 +8,6 @@ interface Params {
   };
 }
 
-// DELETE /api/contact/[id] - Delete contact message
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
     await connectDB();

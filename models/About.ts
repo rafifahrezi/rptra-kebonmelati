@@ -25,7 +25,8 @@ export interface IAbout extends Document {
   facilities: {
     title: string;
     description: string;
-    items: { name: string; description: string; images: string[] }[]; // <- multiple images
+    items: { name: string; description: string; }[];
+    images: string[]
   };
   collaborations: {
     title: string;
@@ -75,13 +76,8 @@ const aboutSchema = new Schema<IAbout>(
     facilities: {
       title: { type: String, required: true },
       description: { type: String, required: true },
-      items: [
-        {
-          name: { type: String, required: true },
-          description: { type: String, required: true },
-          images: { type: [String], default: [] }, // <- array of image URLs
-        },
-      ],
+      items: [{ name: String, description: String }],
+      images: [{ type: String }], // Ensured as array
     },
     collaborations: {
       title: { type: String, required: true },

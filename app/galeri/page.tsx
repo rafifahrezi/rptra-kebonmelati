@@ -5,23 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Search,
-  Calendar,
-  ImageIcon,
-  AlertCircle,
-  RefreshCw,
-  ArrowRight,
-  PlayCircle,
-} from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, Calendar, ImageIcon, AlertCircle, RefreshCw, ArrowRight, PlayCircle } from "lucide-react";
 import Link from "next/link";
+import { LoadingState } from "@/components/ui/loading";
 
 interface GalleryItem {
   id: number | string;
@@ -297,16 +284,7 @@ export default function GalleryPage() {
   }, []);
 
   // === Loading State ===
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600 font-medium">Memuat galeri...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <LoadingState />;
 
   // === Error State ===
   if (error) {

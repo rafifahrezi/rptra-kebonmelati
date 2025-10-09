@@ -172,36 +172,36 @@ export default function NewsDetailPage() {
 
         {/* Article Content */}
         <Card className="mb-8">
-                  <CardContent className="p-8">
-                    <ReactMarkdown
-                      components={{
-                        // Custom component untuk styling
-                        h1: ({node, ...props}) => <h1 className="text-2xl font-bold mb-4" {...props} />,
-                        h2: ({node, ...props}) => <h2 className="text-xl font-semibold mb-3" {...props} />,
-                        p: ({node, ...props}) => <p className="mb-4 leading-relaxed" {...props} />,
-                        a: ({node, ...props}) => (
-                          <a 
-                            className="text-blue-600 hover:underline" 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            {...props} 
-                          />
-                        ),
-                        // img: ({node, ...props}) => (
-                        //   <OptimizedImage 
-                        //     src={props.src || ''} 
-                        //     alt={props.alt || ''} 
-                        //     className="rounded-lg my-4 max-w-full" 
-                        //   />
-                        // )
-                      }}
-                      remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeRaw]}
-                    >
-                      {news.content}
-                    </ReactMarkdown>
-                  </CardContent>
-                </Card>
+          <CardContent className="p-8">
+            <ReactMarkdown
+              components={{
+                // Custom component untuk styling
+                h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mb-4" {...props} />,
+                h2: ({ node, ...props }) => <h2 className="text-xl font-semibold mb-3" {...props} />,
+                p: ({ node, ...props }) => <p className="mb-4 leading-relaxed" {...props} />,
+                a: ({ node, ...props }) => (
+                  <a
+                    className="text-blue-600 hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    {...props}
+                  />
+                ),
+                // img: ({node, ...props}) => (
+                //   <OptimizedImage 
+                //     src={props.src || ''} 
+                //     alt={props.alt || ''} 
+                //     className="rounded-lg my-4 max-w-full" 
+                //   />
+                // )
+              }}
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeRaw]}
+            >
+              {news.content}
+            </ReactMarkdown>
+          </CardContent>
+        </Card>
 
         {/* Tags */}
         {news.tags && news.tags.length > 0 && (

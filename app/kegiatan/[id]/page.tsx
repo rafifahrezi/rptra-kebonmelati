@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, MapPin, Users, RefreshCw, AlertCircle, ImageIcon, X, ChevronLeft, ChevronRight } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 /* ----- Types ----- */
 interface EventImage {
@@ -332,6 +333,80 @@ export default function EventDetailPage() {
     );
   };
 
+  // Markdown component with styling
+  const MarkdownContent = ({ content }: { content: string }) => {
+    return (
+      <div className="prose prose-green max-w-none">
+        <ReactMarkdown
+          components={{
+            h1: ({ children }) => <h1 className="text-3xl font-bold text-gray-900 mb-4">{children}</h1>,
+            h2: ({ children }) => <h2 className="text-2xl font-bold text-gray-900 mb-3">{children}</h2>,
+            h3: ({ children }) => <h3 className="text-xl font-bold text-gray-900 mb-3">{children}</h3>,
+            h4: ({ children }) => <h4 className="text-lg font-bold text-gray-900 mb-2">{children}</h4>,
+            p: ({ children }) => <p className="text-gray-700 mb-4 leading-relaxed">{children}</p>,
+            ul: ({ children }) => <ul className="list-disc pl-5 mb-4 text-gray-700">{children}</ul>,
+            ol: ({ children }) => <ol className="list-decimal pl-5 mb-4 text-gray-700">{children}</ol>,
+            li: ({ children }) => <li className="mb-1">{children}</li>,
+            strong: ({ children }) => <strong className="font-semibold text-gray-900">{children}</strong>,
+            em: ({ children }) => <em className="italic">{children}</em>,
+            blockquote: ({ children }) => (
+              <blockquote className="border-l-4 border-green-500 pl-4 italic text-gray-600 my-4">
+                {children}
+              </blockquote>
+            ),
+            code: ({ children }) => (
+              <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">
+                {children}
+              </code>
+            ),
+            pre: ({ children }) => (
+              <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto my-4">
+                {children}
+              </pre>
+            ),
+            a: ({ children, href }) => (
+              <a 
+                href={href} 
+                className="text-green-600 hover:text-green-700 underline break-words"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {children}
+              </a>
+            ),
+            img: ({ src, alt }) => (
+              <img 
+                src={src} 
+                alt={alt} 
+                className="max-w-full h-auto rounded-lg my-4"
+                loading="lazy"
+              />
+            ),
+            table: ({ children }) => (
+              <div className="overflow-x-auto my-4">
+                <table className="min-w-full border-collapse border border-gray-300">
+                  {children}
+                </table>
+              </div>
+            ),
+            th: ({ children }) => (
+              <th className="border border-gray-300 px-4 py-2 bg-gray-100 font-semibold">
+                {children}
+              </th>
+            ),
+            td: ({ children }) => (
+              <td className="border border-gray-300 px-4 py-2">
+                {children}
+              </td>
+            ),
+          }}
+        >
+          {content}
+        </ReactMarkdown>
+      </div>
+    );
+  };
+
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="bg-gradient-to-br from-green-600 via-green-500 to-blue-600 text-white">
@@ -339,7 +414,7 @@ export default function EventDetailPage() {
           <div className="max-w-4xl mx-auto text-center">
             <div className="flex items-center justify-center gap-4 mb-6">
               <div className="px-4 py-2 rounded-full bg-white/10">
-                <span className="text-sm font-medium">{event.status}</span>
+                <span className="text-sm font-medium capitalize">{event.status}</span>
               </div>
               <div className="px-4 py-2 rounded-full bg-white/10">
                 <span className="text-sm font-medium">{event.category}</span>
@@ -373,8 +448,8 @@ export default function EventDetailPage() {
             <h2 className="text-2xl font-bold mb-4">{event.title}</h2>
 
             {event.description && (
-              <div className="prose mb-6 text-gray-700">
-                <div dangerouslySetInnerHTML={{ __html: event.description }} />
+              <div className="mb-6 text-gray-700">
+                <MarkdownContent content={event.description} />
               </div>
             )}
 

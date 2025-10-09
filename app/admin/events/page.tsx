@@ -1,21 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import {
-  Calendar,
-  MapPin,
-  Plus,
-  Edit,
-  Trash2,
-  Eye,
-  Search,
-  ArrowLeft,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Upload,
-  Clock,
-} from "lucide-react";
+import { Calendar, MapPin, Plus, Edit, Trash2, Eye, Search, ArrowLeft, X, ChevronLeft, ChevronRight, Upload, Clock } from "lucide-react";
 import Link from "next/link";
 import AdminLoading from "@/app/admin/loading";
 
@@ -494,6 +480,9 @@ const EventModal: React.FC<{
                     className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all resize-y"
                     placeholder="Deskripsikan event Anda..."
                   />
+                  <p className="text-xs mt-1 transition-colors text-red-500"> 
+                    Max 500 karakter
+                  </p>
                 </div>
 
                 <div>

@@ -1,15 +1,14 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { MapPin, Phone, Mail, Clock, Send, MessageSquare, Calendar, Users } from "lucide-react"
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MapPin, Phone, Mail, Clock, Send, MessageSquare, Calendar, Users, AlertCircle, Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -19,18 +18,59 @@ export default function ContactPage() {
     subject: "",
     category: "",
     message: "",
-  })
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Handle form submission here
-    console.log("Form submitted:", formData)
-    // Reset form or show success message
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Gagal mengirim pesan");
+      }
+
+      toast({
+        title: "Pesan Terkirim",
+        description: "Terima kasih! Kami akan segera menghubungi Anda.",
+        variant: "success",
+      });
+
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        subject: "",
+        category: "",
+        message: "",
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan";
+      setSubmitError(errorMessage);
+      toast({
+        title: "Gagal Mengirim",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   return (
     <div className="min-h-screen py-8">
@@ -136,9 +176,30 @@ export default function ContactPage() {
                     />
                   </div>
 
-                  <Button type="submit" size="lg" className="w-full">
-                    <Send className="w-4 h-4 mr-2" />
-                    Kirim Pesan
+                  {submitError && (
+                    <div className="flex items-center gap-2 text-red-600 text-sm">
+                      <AlertCircle className="w-4 h-4" />
+                      {submitError}
+                    </div>
+                  )}
+
+                  <Button 
+                    type="submit" 
+                    size="lg" 
+                    className="w-full"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Mengirim...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Kirim Pesan
+                      </>
+                    )}
                   </Button>
                 </form>
               </CardContent>
@@ -179,17 +240,8 @@ export default function ContactPage() {
                   <Mail className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-medium">Email</p>
-                    <p className="text-sm text-muted-foreground">info@rptrakebon melati.id</p>
-                    <p className="text-sm text-muted-foreground">admin@rptrakebon melati.id</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <Clock className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">Jam Operasional</p>
-                    <p className="text-sm text-muted-foreground">Senin - Jumat: 06:00 - 21:00</p>
-                    <p className="text-sm text-muted-foreground">Sabtu - Minggu: 06:00 - 22:00</p>
+                    <p className="text-sm text-muted-foreground">info@rptrakebonmelati.id</p>
+                    <p className="text-sm text-muted-foreground">admin@rptrakebonmelati.id</p>
                   </div>
                 </div>
               </CardContent>
@@ -258,21 +310,21 @@ export default function ContactPage() {
               <CardDescription>Temukan RPTRA Kebon Melati di peta</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
+              <div className="aspect-video bg-muted rounded-lg flex items-center justify-center overflow-hidden">
                 <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.479640730367!2d106.8142379!3d-6.2002777!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f6a1a8e9fd37%3A0xfd41c3867e738112!2sRPTRA%20Kebon%20Melati!5e0!3m2!1sid!2sid!4v1755798002460!5m2!1sid!2sid"
-              width="100%"
-              height="100%"
-              className="border-0"
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.479640730367!2d106.8142379!3d-6.2002777!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f6a1a8e9fd37%3A0xfd41c3867e738112!2sRPTRA%20Kebon%20Melati!5e0!3m2!1sid!2sid!4v1755798002460!5m2!1sid!2sid"
+                  width="100%"
+                  height="100%"
+                  className="border-0"
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
     </div>
-  )
+  );
 }

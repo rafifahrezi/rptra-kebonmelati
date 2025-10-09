@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
 import { Calendar, User, Search, ArrowRight, RefreshCw, AlertCircle } from "lucide-react"
+import { LoadingState } from "@/components/ui/loading";
 
 interface NewsItem {
   _id: string;
@@ -82,16 +83,7 @@ export default function NewsPage() {
   }, [publishedNews, selectedCategory, searchTerm]);
 
   // Loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <RefreshCw className="w-8 h-8 mx-auto text-blue-600 animate-spin mb-4" />
-          <p className="text-gray-600">Memuat berita...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <LoadingState />;
 
   // Error state
   if (error) {

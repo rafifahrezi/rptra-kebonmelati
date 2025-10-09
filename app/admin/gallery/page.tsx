@@ -18,7 +18,7 @@ interface Gallery {
   title: string;
   description?: string;
   category?: string;
-  date: string; 
+  date: string;
   images: string[]; // Array ID GridFS
   status: "draft" | "published" | "archived";
   createdAt?: string;
@@ -743,7 +743,10 @@ const GalleryManagementPage: React.FC = () => {
                 <p className="text-gray-600 mt-1">Kelola Galeri dan Photo RPTRA</p>
               </div>
             </div>
-
+            <div className="flex flex-2 gap-2 justify-end">
+            <Link href="/admin/video" className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 font-medium">
+              Tambah Vidio
+            </Link>
             <button
               onClick={() => openModal()}
               className="bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 font-medium"
@@ -752,6 +755,7 @@ const GalleryManagementPage: React.FC = () => {
               <Plus className="w-5 h-5" />
               Buat Galeri
             </button>
+            </div>
           </div>
         </div>
       </div>
@@ -803,9 +807,9 @@ const GalleryManagementPage: React.FC = () => {
                   {g.date && (
                     <div className=" flex-shrink-0">
                       <Calendar className="w-4 h-4 mr-2" />
-                    <p className="text-xs text-gray-500 mb-4">
-                      {formatDateForDisplay(g.date)}
-                    </p>
+                      <p className="text-xs text-gray-500 mb-4">
+                        {formatDateForDisplay(g.date)}
+                      </p>
                     </div>
                   )}
                   <div className="flex items-center justify-between text-sm text-gray-500">

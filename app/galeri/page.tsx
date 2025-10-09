@@ -22,37 +22,13 @@ interface GalleryItem {
 
 // New Video Item Interface
 interface VideoItem {
-  id: string;
-  title: string;
-  description: string;
+  _id: string;
+  titleVidio: string;
+  deskripsi: string;
   youtubeUrl: string; // YouTube embed URL (e.g., https://www.youtube.com/embed/VIDEO_ID)
   date: string;
 }
 
-// Static Video Data
-const staticVideos: VideoItem[] = [
-  {
-    id: "video1",
-    title: "Kegiatan Senam Merdeka 2025",
-    description: "Video highlight dari acara senam merdeka di RPTRA Kebon Melati, melibatkan komunitas lokal.",
-    youtubeUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    date: "2025-08-17",
-  },
-  {
-    id: "video2",
-    title: "Jumat Curhat Bersama Warga",
-    description: "Dokumentasi kegiatan Jumat Curhat, berbagi cerita dan solusi bersama warga.",
-    youtubeUrl: "https://www.youtube.com/embed/9bZkp7q19f0",
-    date: "2025-07-10",
-  },
-  {
-    id: "video3",
-    title: "Workshop Literasi Kesehatan",
-    description: "Rekaman workshop edukasi kesehatan untuk keluarga di RPTRA Kebon Melati.",
-    youtubeUrl: "https://www.youtube.com/embed/3f5dAiyzLdw",
-    date: "2025-06-15",
-  },
-];
 
 const getImageUrl = (id: string): string => {
   if (!id || id.length === 0) return "/placeholder-image.jpg";
@@ -114,9 +90,8 @@ const GalleryImage: React.FC<{
         src={getImageUrl(src)}
         alt={alt}
         title={title}
-        className={`w-full h-full object-cover transition-opacity duration-300 ${
-          imageLoading ? "opacity-0" : "opacity-100"
-        }`}
+        className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoading ? "opacity-0" : "opacity-100"
+          }`}
         onError={handleError}
         onLoad={handleLoad}
         loading={loading}
@@ -188,40 +163,6 @@ const GalleryCard: React.FC<{ item: GalleryItem }> = ({ item }) => {
   );
 };
 
-// Video Card Component
-const VideoCard: React.FC<{ item: VideoItem }> = ({ item }) => {
-  return (
-    <Card className="overflow-hidden group cursor-pointer rounded-xl border border-gray-200 shadow-sm hover:shadow-lg transition-shadow duration-300">
-      <div className="aspect-[16/9] relative">
-        <iframe
-          src={item.youtubeUrl}
-          title={item.title}
-          className="w-full h-full rounded-t-xl"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          loading="lazy"
-        />
-      </div>
-      <div className="p-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{item.title}</h3>
-        <p className="text-gray-600 text-sm mb-3 line-clamp-3">{item.description}</p>
-        <p className="text-gray-500 text-xs mb-4 flex items-center gap-1">
-          <Calendar className="w-3 h-3" />
-          {formatDateForDisplay(item.date)}
-        </p>
-        <Button
-          asChild
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium shadow-sm hover:shadow-md transition-shadow rounded-lg"
-        >
-          <Link href={item.youtubeUrl} target="_blank" rel="noopener noreferrer">
-            Tonton di YouTube
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Link>
-        </Button>
-      </div>
-    </Card>
-  );
-};
 
 export default function GalleryPage() {
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
@@ -229,6 +170,11 @@ export default function GalleryPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [videos, setVideos] = useState<VideoItem[]>([]);
+  const [videoLoading, setVideoLoading] = useState(true);
+  const [videoError, setVideoError] = useState<string | null>(null);
+
 
   const fetchGallery = useCallback(async () => {
     setLoading(true);
@@ -256,9 +202,113 @@ export default function GalleryPage() {
     }
   }, []);
 
+  // Fetch videos from API
+  const fetchVideos = useCallback(async () => {
+    setVideoLoading(true);
+    setVideoError(null);
+    try {
+      const res = await fetch("/api/video", {
+        credentials: "include",
+        cache: "no-store",
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}: Gagal memuat video`);
+
+      const data: VideoItem[] = await res.json();
+      setVideos(data);
+    } catch (err) {
+      setVideoError(err instanceof Error ? err.message : "Terjadi kesalahan tak terduga");
+      console.error("Fetch videos error:", err);
+    } finally {
+      setVideoLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    fetchGallery();
-  }, [fetchGallery]);
+    fetchGallery(), fetchVideos();
+  }, [fetchGallery, fetchVideos]);
+
+  // Video Card Component
+  const VideoCard: React.FC<{ item: VideoItem }> = ({ item }) => {
+    return (
+      <Card className="overflow-hidden group cursor-pointer rounded-xl border border-gray-200 shadow-sm hover:shadow-lg transition-shadow duration-300">
+        <div className="aspect-[16/9] relative">
+          <iframe
+            src={item.youtubeUrl}
+            title={item.titleVidio}
+            className="w-full h-full rounded-t-xl"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            loading="lazy"
+          />
+        </div>
+        <div className="p-4">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{item.titleVidio}</h3>
+          {item.deskripsi && (
+            <p className="text-gray-600 text-sm mb-3 line-clamp-3">{item.deskripsi}</p>
+          )}
+          <p className="text-gray-500 text-xs mb-4 flex items-center gap-1">
+            <Calendar className="w-3 h-3" />
+            {formatDateForDisplay(item.date)}
+          </p>
+          <Button
+            asChild
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium shadow-sm hover:shadow-md transition-shadow rounded-lg"
+          >
+            <Link href={item.youtubeUrl} target="_blank" rel="noopener noreferrer">
+              Tonton di YouTube
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Link>
+          </Button>
+        </div>
+      </Card>
+    );
+  };
+
+  const renderVideoSection = () => {
+    // Loading state for videos
+    if (videoLoading) {
+      return (
+        <div className="py-16 flex justify-center">
+          <LoadingState />
+        </div>
+      );
+    }
+
+    // Error state for videos
+    if (videoError) {
+      return (
+        <Card className="max-w-md mx-auto p-8 bg-white text-center">
+          <AlertCircle className="w-16 h-16 mx-auto text-red-500 mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Gagal Memuat Video</h3>
+          <p className="text-red-600 text-sm mb-6">{videoError}</p>
+          <Button onClick={fetchVideos} className="w-full">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Coba Lagi
+          </Button>
+        </Card>
+      );
+    }
+
+    // No videos state
+    if (videos.length === 0) {
+      return (
+        <Card className="max-w-md mx-auto p-8 bg-white text-center">
+          <PlayCircle className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+          <h3 className="text-l font-semibold text-gray-900 mb-2">Belum ada Video</h3>
+        </Card>
+      );
+    }
+
+    // Render videos
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {videos.map((video) => (
+          <VideoCard key={video._id} item={video} />
+        ))}
+      </div>
+    );
+  };
 
   const categories = useMemo(() => {
     const cats = new Set(galleryItems.map((item) => item.category.toLowerCase()));
@@ -282,6 +332,8 @@ export default function GalleryPage() {
     setSearchTerm("");
     setSelectedCategory("all");
   }, []);
+
+
 
   // === Loading State ===
   if (loading) return <LoadingState />;
@@ -393,27 +445,17 @@ export default function GalleryPage() {
         )}
 
         {/* Video Section */}
+        <hr className="h-px my-8 bg-gray-400 border-0 dark:bg-gray-700"></hr>
         <section className="mt-12 py-10">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">Galeri Vidio</h2>
+            <h2 className="text-3xl font-bold text-gray-900">Galeri Video</h2>
             <Button>
-              <Link href="www.youtube.com" target="_blank" rel="noopener noreferrer">
+              <Link href="https://www.youtube.com/@Kelurahankebonmelati" target="_blank" rel="noopener noreferrer">
                 Lihat Semua di Youtube
               </Link>
             </Button>
           </div>
-          {staticVideos.length === 0 ? (
-            <Card className="max-w-md mx-auto p-8 bg-white text-center">
-              <PlayCircle className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-l font-semibold text-gray-900 mb-2">Belum ada Vidio</h3>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {staticVideos.map((video) => (
-                <VideoCard key={video.id} item={video}/>
-              ))}
-            </div>
-          )}
+          {renderVideoSection()}
         </section>
       </div>
     </div>

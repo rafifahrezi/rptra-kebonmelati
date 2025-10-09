@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { RequestData } from "@/types/types";
-import { Check, X, Clock, MoreHorizontal, AlertCircle, Calendar, MapPin, Users, User, Phone, Building, Target, BadgeIcon, Trash2 } from "lucide-react";
+import * as XLSX from 'xlsx';
+import { Check, X, Clock, MoreHorizontal, AlertCircle, Calendar, MapPin, Users, User, Phone, Building, Target, BadgeIcon, Trash2, Download } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -171,6 +172,50 @@ const RequestList: React.FC<RequestListProps> = ({ selectedDate }) => {
     setSelectedRequest(null);
   };
 
+  // New function for exporting to Excel
+    const exportToExcel = () => {
+      try {
+        // Prepare data for export
+        const exportData = requests.map((request) => ({
+          'Nama Instansi': request.namaInstansi,
+          'Nama Peminjam': request.namaPeminjam,
+          'Tanggal Pelaksanaan': request.tanggalPelaksanaan,
+          'Alamat': request.alamat,
+          'No Telepon': request.noTelp,
+          'Jumlah Peserta': request.jumlahPeserta,
+          'Waktu Penggunaan': request.waktuPenggunaan,
+          'Penggunaan Ruangan': request.penggunaanRuangan,
+          'Tujuan Penggunaan': request.tujuanPenggunaan,
+          'Status': request.status
+        }));
+  
+        // Create worksheet
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+  
+        // Create workbook and add worksheet
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Daftar Permintaan');
+  
+        // Generate Excel file
+        XLSX.writeFile(
+          workbook, 
+          `Daftar_Permintaan_${new Date().toISOString().split('T')[0]}.xlsx`
+        );
+  
+        // Show success snackbar
+        setSnackbar({ 
+          message: "Berhasil mengekspor data ke Excel", 
+          type: "success" 
+        });
+      } catch (error) {
+        console.error("Export to Excel failed:", error);
+        setSnackbar({ 
+          message: "Gagal mengekspor data", 
+          type: "error" 
+        });
+      }
+    };
+
   if (loading) {
     return (
       <Card className="shadow-md rounded-xl overflow-hidden">
@@ -195,6 +240,16 @@ const RequestList: React.FC<RequestListProps> = ({ selectedDate }) => {
     <div className="shadow-md rounded-xl overflow-hidden">
       <CardHeader className="border-b p-6">
         <h2 className="text-xl font-semibold text-gray-900">Daftar Permintaan</h2>
+        {requests.length > 0 && (
+          <Button 
+            variant="outline" 
+            onClick={exportToExcel}
+            className="flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Export Excel
+          </Button>
+        )}
       </CardHeader>
 
       <CardContent className="p-0">

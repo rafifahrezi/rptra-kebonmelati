@@ -229,19 +229,19 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
     },
     {
       title: "Galeri",
-      description: "Upload dan organisir foto kegiatan",
+      description: "Upload dan organisir Foto Vidio kegiatan",
       icon: Image,
       color: "green",
       href: "/admin/gallery",
-      features: ["Upload Foto", "Buat Album", "Optimasi Gambar"],
+      features: ["Upload Foto", "Kelola Album", "Kelola Vidio Youtube"],
     },
     {
       title: "Analitik",
-      description: "Statistik pengunjung dan performa",
+      description: "Statistik pengunjung dan Request",
       icon: BarChart,
       color: "gray",
       href: "/admin/analytics",
-      features: ["Laporan Traffic", "User Stats", "Performance"],
+      features: ["Data Pengunjung", "Data Permohonan | Status", "Kotak Saran"],
     },
   ];
 

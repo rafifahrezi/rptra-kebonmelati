@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Phone, Mail, Clock, Send, MessageSquare, Calendar, Users, AlertCircle, Loader2 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -43,7 +43,6 @@ export default function ContactPage() {
       toast({
         title: "Pesan Terkirim",
         description: "Terima kasih! Kami akan segera menghubungi Anda.",
-        variant: "success",
       });
 
       // Reset form
@@ -91,9 +90,9 @@ export default function ContactPage() {
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 py-2">
                   <MessageSquare className="w-5 h-5 text-primary" />
-                  Kirim Pesan
+                  Kritik & Saran 
                 </CardTitle>
                 <CardDescription>
                   Isi formulir di bawah ini dan kami akan merespons pesan Anda sesegera mungkin.
@@ -157,7 +156,7 @@ export default function ContactPage() {
                     <Label htmlFor="subject">Subjek *</Label>
                     <Input
                       id="subject"
-                      placeholder="Subjek pesan Anda"
+                      placeholder="Subjek pesan Anda (Contoh: Fasilitas)"
                       value={formData.subject}
                       onChange={(e) => handleInputChange("subject", e.target.value)}
                       required
@@ -210,19 +209,21 @@ export default function ContactPage() {
           <div className="space-y-6">
             {/* Contact Details */}
             <Card>
-              <CardHeader>
+              <CardHeader className="pt-2">
                 <CardTitle>Informasi Kontak</CardTitle>
                 <CardDescription>Cara lain untuk menghubungi kami</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 pb-2">
                 <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-medium">Alamat</p>
                     <p className="text-sm text-muted-foreground">
-                      Jl. Kebon Melati No. 123
+                      Jl. H. Awaludin IV, RT.3/RW.17
                       <br />
-                      Jakarta Pusat, DKI Jakarta 10230
+                      Kebon Melati, Tanah Abang
+                      <br />
+                      Jakarta Pusat 10230
                     </p>
                   </div>
                 </div>
@@ -248,7 +249,7 @@ export default function ContactPage() {
             </Card>
 
             {/* Quick Actions */}
-            <Card>
+            <Card className="py-2">
               <CardHeader>
                 <CardTitle>Aksi Cepat</CardTitle>
                 <CardDescription>Layanan yang sering dicari</CardDescription>
@@ -266,15 +267,17 @@ export default function ContactPage() {
                     Tentang RPTRA
                   </a>
                 </Button>
-                <Button variant="outline" className="w-full justify-start bg-transparent">
-                  <Phone className="w-4 h-4 mr-2" />
-                  Hubungi Langsung
+                <Button variant="outline" className="w-full justify-start bg-transparent" asChild>
+                  <a href="#map-section">
+                    <MapPin className="w-4 h-4 mr-2" />
+                    Lihat Peta Lokasi
+                  </a>
                 </Button>
               </CardContent>
             </Card>
 
             {/* FAQ */}
-            <Card>
+            <Card className="py-2">
               <CardHeader>
                 <CardTitle>Pertanyaan Umum</CardTitle>
               </CardHeader>
@@ -303,8 +306,8 @@ export default function ContactPage() {
         </div>
 
         {/* Map Section */}
-        <div className="mt-12">
-          <Card>
+        <div id="map-section" className="mt-12">
+          <Card className="py-2">
             <CardHeader>
               <CardTitle>Lokasi Kami</CardTitle>
               <CardDescription>Temukan RPTRA Kebon Melati di peta</CardDescription>

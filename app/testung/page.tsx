@@ -19,14 +19,14 @@ export default function AboutPage() {
                 Membangun Masa Depan Anak-anak <span className="text-primary">Jakarta</span>
               </h1>
               <p className="text-lg text-muted-foreground text-pretty leading-relaxed">
-                RPTRA Kebon Melati hadir sebagai ruang publik terpadu yang ramah anak, menyediakan fasilitas dan program
+                RPTRA BONTI hadir sebagai ruang publik terpadu yang ramah anak, menyediakan fasilitas dan program
                 berkualitas untuk mendukung tumbuh kembang anak-anak di Jakarta Pusat.
               </p>
             </div>
             <div className="relative">
               <img
                 src="/modern-community-center-building-with-children-and.jpg"
-                alt="Gedung RPTRA Kebon Melati"
+                alt="Gedung RPTRA BONTI"
                 className="w-full h-80 object-cover rounded-2xl"
               />
             </div>

@@ -19,7 +19,7 @@ export function Footer() {
                 <span className="text-primary-foreground font-bold text-lg">R</span>
               </div>
               <div>
-                <h3 className="font-bold text-foreground">RPTRA Kebon Melati</h3>
+                <h3 className="font-bold text-foreground">RPTRA BONTI</h3>
                 <p className="text-sm text-muted-foreground">{getTranslation(language, "home.hero.badge")}</p>
               </div>
             </div>

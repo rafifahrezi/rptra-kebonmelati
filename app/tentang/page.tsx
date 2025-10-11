@@ -2,11 +2,13 @@
 "use client";
 
 import React, { memo, useState, useEffect, useCallback } from "react";
-import { Users, Heart, Target, Award, MapPin, Clock, Play as Playground, Building2 } from "lucide-react";
+import { Users, Heart, Target, Award, MapPin, Clock, Eye, Play as Playground, Building2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useAboutData } from '@/hooks/useAboutData';
 // Import types dari file terpisah
-import { 
-  AboutData, 
+import {
+  AboutData,
 } from '@/types/AboutData';
 
 
@@ -45,7 +47,7 @@ const NoDataState = memo(() => (
   </div>
 ));
 
-const getImageUrl = (imageId: string): string => `/api/files/${imageId}`; 
+const getImageUrl = (imageId: string): string => `/api/files/${imageId}`;
 
 // Hero Section Component
 const HeroSection = memo(({ title, subtitle }: { title: string; subtitle: string }) => (
@@ -74,48 +76,93 @@ const MissionVisionSection = memo(
     establishedYear: string;
     establishedText: string;
   }) => (
-    <section className="py-16 bg-white">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">{mission.title}</h2>
-            <p className="text-lg text-gray-600 mb-8">{mission.description}</p>
-            <div className="space-y-6">
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Target className="w-6 h-6 text-green-600" />
+    <section className="py-8 bg-white sm:py-12 lg:py-16">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="flex flex-col lg:grid lg:grid-cols-2 lg:gap-12 lg:items-center">
+          {/* Content Section - Mobile First */}
+          <div className="order-2 lg:order-1">
+            <div className="lg:col-span-7 space-y-8">
+              {/* Mission Card */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                    <Target className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900">{mission.title}</h3>
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{vision.title}</h3>
-                  <p className="text-gray-600">{vision.description}</p>
-                </div>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    ul: ({ node, ...props }) => (
+                      <ul className="space-y-3" {...props} />
+                    ),
+                    li: ({ node, ...props }) => (
+                      <li className="flex items-start gap-3">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                        <span className="text-foreground/80 leading-relaxed flex-1" {...props} />
+                      </li>
+                    ),
+                    p: ({ node, ...props }) => (
+                      <p className="text-foreground/80 leading-relaxed mb-3" {...props} />
+                    )
+                  }}>
+                  {mission.description || ""}
+                </ReactMarkdown>
               </div>
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Award className="w-6 h-6 text-blue-600" />
+
+              {/* Vision & Values Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Vision Card */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg transition-all duration-300 group">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Eye className="w-5 h-5 text-white" />
+                    </div>
+                    <h4 className="text-lg font-semibold text-gray-900">{vision.title}</h4>
+                  </div>
+                  <p className="text-gray-600 leading-relaxed group-hover:text-gray-700 transition-colors">
+                    {vision.description}
+                  </p>
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{values.title}</h3>
-                  <p className="text-gray-600">{values.description}</p>
+                {/* Values Card */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg transition-all duration-300 group">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Award className="w-5 h-5 text-white" />
+                    </div>
+                    <h4 className="text-lg font-semibold text-gray-900">{values.title}</h4>
+                  </div>
+                  <p className="text-gray-600 leading-relaxed group-hover:text-gray-700 transition-colors">
+                    {values.description}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
-          <div className="relative">
-            <div className="aspect-w-4 aspect-h-3 rounded-lg overflow-hidden shadow-lg">
-              <img
-                src={getImageUrl(mission.image)}
-                alt={mission.title}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = "https://placehold.co/400";
-                }}
-              />
-            </div>
-            <div className="absolute -bottom-6 -right-6 bg-white p-4 rounded-lg shadow-lg">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{establishedYear}</div>
-                <div className="text-sm text-gray-600">{establishedText}</div>
+          {/* Image Section - Mobile First */}
+          <div className="order-1 lg:order-2 mb-8 lg:mb-0">
+            <div className="relative">
+              {/* Image Container */}
+              <div className="aspect-[4/3] rounded-xl overflow-hidden shadow-lg sm:aspect-w-4 sm:aspect-h-3">
+                <img
+                  src={getImageUrl(mission.image)}
+                  alt={mission.title}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = "https://placehold.co/400";
+                  }}
+                />
+              </div>
+              {/* Established Year Badge - Responsive Positioning */}
+              <div className="absolute -bottom-4 -right-4 bg-white p-3 rounded-lg shadow-lg sm:-bottom-6 sm:-right-6 sm:p-4">
+                <div className="text-center min-w-[80px] sm:min-w-[100px]">
+                  <div className="text-xl font-bold text-green-600 sm:text-2xl">
+                    {establishedYear}
+                  </div>
+                  <div className="text-xs text-gray-600 mt-1 sm:text-sm">
+                    {establishedText}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -124,6 +171,7 @@ const MissionVisionSection = memo(
     </section>
   )
 );
+
 
 // Programs Section Component
 const ProgramsSection = memo(({ programs }: { programs: AboutData["programs"] }) => {
@@ -190,27 +238,27 @@ const FacilitiesSection = memo(({ facilities }: { facilities: AboutData["facilit
   };
 
   const imageSlots = [
-    { 
-      index: 0, 
-      placeholder: placeholders.square, 
+    {
+      index: 0,
+      placeholder: placeholders.square,
       aspect: "aspect-square",
       size: "400x400"
     },
-    { 
-      index: 1, 
-      placeholder: placeholders.square, 
+    {
+      index: 1,
+      placeholder: placeholders.square,
       aspect: "aspect-square",
       size: "400x400"
     },
-    { 
-      index: 2, 
-      placeholder: placeholders.portrait, 
+    {
+      index: 2,
+      placeholder: placeholders.portrait,
       aspect: "aspect-[2/3]",
       size: "400x600"
     },
-    { 
-      index: 3, 
-      placeholder: placeholders.square, 
+    {
+      index: 3,
+      placeholder: placeholders.square,
       aspect: "aspect-square",
       size: "400x400"
     },
@@ -241,8 +289,8 @@ const FacilitiesSection = memo(({ facilities }: { facilities: AboutData["facilit
               {facilities.items.length > 0 ? (
                 <div className="grid grid-cols-1 gap-4">
                   {facilities.items.map((facility, index) => (
-                    <div 
-                      key={index} 
+                    <div
+                      key={index}
                       className="flex items-start gap-4 p-4 rounded-xl hover:bg-green-50 transition-all duration-300 group"
                     >
                       <div className="flex-shrink-0 w-3 h-3 bg-green-400 rounded-full mt-2 group-hover:bg-green-600 transition-colors"></div>
@@ -364,8 +412,8 @@ const FacilitiesSection = memo(({ facilities }: { facilities: AboutData["facilit
             <p className="text-lg opacity-90 mb-6 max-w-2xl mx-auto">
               Datang dan nikmati berbagai fasilitas terbaik kami yang dirancang untuk kenyamanan Anda dan keluarga
             </p>
-            <a  href="/permohonan" target="_blank" 
-            className="bg-white text-green-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors duration-300">
+            <a href="/permohonan" target="_blank"
+              className="bg-white text-green-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors duration-300">
               Jadwalkan Kunjungan
             </a>
           </div>
@@ -461,11 +509,11 @@ const HoursLocationSection = memo(({ operational }: { operational: AboutData["op
 
 // Main About Component
 const About = () => {
-  const { 
-    aboutData, 
-    loading, 
-    error, 
-    refetch 
+  const {
+    aboutData,
+    loading,
+    error,
+    refetch
   } = useAboutData();
 
   if (loading) return <LoadingState />;

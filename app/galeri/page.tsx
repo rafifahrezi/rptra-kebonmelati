@@ -363,7 +363,7 @@ export default function GalleryPage() {
         <div className="container mx-auto px-4 max-w-4xl text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 drop-shadow-md">Galeri Foto</h1>
           <p className="text-lg md:text-xl opacity-90 max-w-2xl mx-auto leading-relaxed">
-            Jelajahi momen berharga dari kegiatan komunitas di RPTRA Kebon Melati. Setiap foto adalah cerita kebersamaan.
+            Jelajahi momen berharga dari kegiatan komunitas di RPTRA BONTI. Setiap foto adalah cerita kebersamaan.
           </p>
         </div>
       </section>

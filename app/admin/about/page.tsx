@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Edit2, X, ChevronDown, Plus, Trash2, ArrowLeft, Info, Upload, Eye, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
 import AdminLoading from "@/app/admin/loading";
+import MarkdownEditor from "./_components/MarkdownEditor"; // sesuaikan path
 
 // ================= Types =================
 interface FacilityItem {
@@ -710,13 +711,15 @@ const AboutAdminPage = () => {
               onChange={(v) => updateData("mission", { ...aboutData.mission, title: v })}
               required
             />
-            <TextAreaField
+            <MarkdownEditor
               label="Deskripsi Misi"
               value={aboutData.mission.description}
               onChange={(v) => updateData("mission", { ...aboutData.mission, description: v })}
+              placeholder="Tulis deskripsi misi menggunakan markdown..."
               required
-              rows={4}
+              rows={6}
             />
+
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">Gambar Misi</label>

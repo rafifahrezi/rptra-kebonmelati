@@ -261,7 +261,7 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Dashboard Admin RPTRA Kebon Melati
+              Dashboard Admin RPTRA BONTI
             </h1>
             <p className="text-gray-600 text-base">
               Selamat datang kembali, <span className="font-medium">{getDisplayName(adminData)}</span>!

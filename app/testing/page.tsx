@@ -60,7 +60,7 @@ export default function HomePage() {
               <div className="aspect-square bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl p-8 flex items-center justify-center">
                 <img
                   src="/children-playing-in-colorful-playground-with-famil.jpg"
-                  alt="Anak-anak bermain di RPTRA Kebon Melati"
+                  alt="Anak-anak bermain di RPTRA BONTI"
                   className="w-full h-full object-cover rounded-2xl"
                 />
               </div>

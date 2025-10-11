@@ -81,7 +81,7 @@ export default function ContactPage() {
           </h1>
           <p className="text-lg text-muted-foreground text-pretty max-w-2xl mx-auto">
             Kami siap membantu Anda! Jangan ragu untuk menghubungi kami jika ada pertanyaan, saran, atau ingin
-            berpartisipasi dalam kegiatan RPTRA Kebon Melati.
+            berpartisipasi dalam kegiatan RPTRA BONTI
           </p>
         </div>
 
@@ -310,7 +310,7 @@ export default function ContactPage() {
           <Card className="py-2">
             <CardHeader>
               <CardTitle>Lokasi Kami</CardTitle>
-              <CardDescription>Temukan RPTRA Kebon Melati di peta</CardDescription>
+              <CardDescription>Temukan RPTRA BONTI di peta</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="aspect-video bg-muted rounded-lg flex items-center justify-center overflow-hidden">

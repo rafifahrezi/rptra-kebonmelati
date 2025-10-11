@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { MapPin, Phone, Mail, Instagram, Facebook, Twitter } from "lucide-react";
+import { MapPin, Phone, Mail, Instagram, Facebook, Twitter, Youtube } from "lucide-react";
 
 export function Footer() {
   // Handler for image fallback
@@ -19,19 +19,19 @@ export function Footer() {
             <div className="flex items-center space-x-3 mb-4">
               <img
                 src="/logo.PNG"
-                alt="Logo RPTRA Kebon Melati"
+                alt="Logo RPTRA BONTI"
                 className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-gray-100"
                 onError={handleImageError}
                 loading="lazy"
                 decoding="async"
               />
               <div>
-                <h3 className="text-lg font-bold">RPTRA Kebon Melati</h3>
+                <h3 className="text-lg font-bold">RPTRA BONTI</h3>
                 <p className="text-sm text-gray-400">Ruang Publik Terpadu Ramah Anak</p>
               </div>
             </div>
             <p className="text-gray-300 mb-4">
-              RPTRA Kebon Melati adalah ruang publik terintegrasi yang dirancang khusus untuk menciptakan
+              RPTRA BONTI adalah ruang publik terintegrasi yang dirancang khusus untuk menciptakan
               lingkungan aman dan ramah anak di Jakarta Pusat.
             </p>
             <div className="flex space-x-4">
@@ -40,23 +40,23 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-green-400 transition-colors"
-                aria-label="Instagram RPTRA Kebon Melati"
+                aria-label="Instagram RPTRA BONTI"
               >
                 <Instagram className="w-5 h-5" />
               </a>
               <a
                 href="#"
                 className="text-gray-400 hover:text-green-400 transition-colors"
-                aria-label="Facebook RPTRA Kebon Melati"
+                aria-label="Facebook RPTRA BONTI"
               >
                 <Facebook className="w-5 h-5" />
               </a>
               <a
                 href="#"
                 className="text-gray-400 hover:text-green-400 transition-colors"
-                aria-label="Twitter RPTRA Kebon Melati"
+                aria-label="Facebook RPTRA BONTI"
               >
-                <Twitter className="w-5 h-5" />
+                <Youtube className="w-5 h-5" />
               </a>
             </div>
           </div>
@@ -119,16 +119,8 @@ export function Footer() {
 
         <div className="border-t border-gray-800 mt-12 pt-6 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-400 text-sm">
-            © 2025 RPTRA Kebon Melati. Seluruh hak cipta dilindungi.
+            © 2025 RPTRA BONTI. Seluruh hak cipta dilindungi.
           </p>
-          <div className="flex space-x-6 mt-4 md:mt-0">
-            <p  className="text-gray-400 hover:text-green-400 text-sm transition-colors">
-              Kebijakan Privasi
-            </p>
-            <p className="text-gray-400 hover:text-green-400 text-sm transition-colors">
-              Syarat & Ketentuan
-            </p>
-          </div>
         </div>
       </div>
     </footer>

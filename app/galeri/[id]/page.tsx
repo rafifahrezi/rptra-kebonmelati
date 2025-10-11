@@ -307,7 +307,7 @@ export default function GalleryDetailPage() {
             </div>
             <h1 className="text-3xl md:text-4xl font-bold mb-4">{gallery.title}</h1>
             <p className="text-blue-100 max-w-2xl mx-auto">
-              Koleksi foto dari kegiatan ini di RPTRA Kebon Melati
+              Koleksi foto dari kegiatan ini di RPTRA BONTI
             </p>
           </div>
         </div>

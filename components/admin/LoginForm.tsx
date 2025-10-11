@@ -38,7 +38,7 @@ export function LoginForm({
         </div>
         <CardTitle className="text-2xl">Admin Dashboard</CardTitle>
         <CardDescription>
-          Masuk ke panel administrasi RPTRA Kebon Melati
+          Masuk ke panel administrasi RPTRA BONTI
         </CardDescription>
       </CardHeader>
       <CardContent>

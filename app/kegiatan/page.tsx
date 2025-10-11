@@ -409,7 +409,7 @@ const Event: React.FC = () => {
       <div className="bg-gradient-to-r from-green-500 to-blue-600 text-white py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-4">Kegiatan RPTRA Bonti</h1>
+            <h1 className="text-4xl md:text-5xl font-extrabold mb-4">Kegiatan RPTRA BONTI</h1>
             <p className="text-lg md:text-xl text-green-100 max-w-3xl mx-auto leading-relaxed">
               Bergabunglah dengan berbagai kegiatan menarik dan bermanfaat untuk seluruh keluarga
             </p>

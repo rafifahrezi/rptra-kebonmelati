@@ -30,18 +30,18 @@ export function Navigation() {
           <Link
             href="/"
             className="flex items-center space-x-3 hover:opacity-90 transition-opacity duration-200"
-            aria-label="Beranda RPTRA Kebon Melati"
+            aria-label="Beranda RPTRA BONTI"
           >
             <Image
               src="/logo.PNG" // Adjust path as needed
-              alt="Logo RPTRA Kebon Melati"
+              alt="Logo RPTRA BONTI"
               width={80}
               height={80}
               className="w-20 h-20 sm:w-20 sm:h-20 rounded-full"
             />
             <div className="flex flex-col">
               <h1 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">
-                RPTRA Kebon Melati
+                RPTRA BONTI
               </h1>
               <p className="text-xs sm:text-sm text-gray-500">
                 Ruang Publik Terpadu Ramah Anak

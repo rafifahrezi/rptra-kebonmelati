@@ -15,6 +15,7 @@ import {
   ChevronRight,
   X,
 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 // --- Reuse from main gallery page ---
 interface GalleryItem {

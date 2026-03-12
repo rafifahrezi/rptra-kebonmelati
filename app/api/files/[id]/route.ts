@@ -1,34 +1,68 @@
-// app/api/files/[id]/route.ts
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { Readable } from "stream";
 import { GridFSService } from "@/lib/gridfs";
 import { ObjectId } from "mongodb";
+import sharp from "sharp";
 
 type ContextParam = { params?: { id?: string } } | any;
 
-/**
- * Safely resolve possibly-thenable context.
- * Uses Promise.resolve to support thenable or plain object.
- */
+// Fungsi untuk mengoptimasi gambar
+async function optimizeImage(
+  buffer: Buffer, 
+  options: {
+    width?: number;
+    height?: number;
+    format?: 'webp' | 'avif' | 'png';
+    quality?: number;
+  } = {}
+) {
+  const {
+    width = 800,
+    height,
+    format = 'webp',
+    quality = 80
+  } = options;
+
+  try {
+    return await sharp(buffer)
+      .resize({ 
+        width, 
+        height, 
+        fit: 'cover',
+        position: 'center'
+      })
+      .toFormat(format, { quality })
+      .toBuffer();
+  } catch (error) {
+    console.error('Image optimization error:', error);
+    throw new Error('Image optimization failed');
+  }
+}
+
+// Fungsi untuk menghasilkan placeholder
+async function generatePlaceholder(buffer: Buffer) {
+  return await sharp(buffer)
+    .resize({ width: 10, height: 10, fit: 'cover' })
+    .toBuffer();
+}
+
+// Fungsi pembantu untuk resolusi konteks
 async function resolveContext(context: ContextParam) {
   return await Promise.resolve(context);
 }
 
-/**
- * Extract id safely (returns undefined if not string)
- */
+// Fungsi untuk ekstraksi ID
 async function getIdFromContext(context: ContextParam): Promise<string | undefined> {
   const resolved = await resolveContext(context);
   const raw = resolved?.params?.id;
   if (!raw) return undefined;
-  // decode URI component (client may send encoded id)
+  
   try {
     const decoded = typeof raw === "string" ? decodeURIComponent(raw) : raw;
     return typeof decoded === "string" ? decoded : undefined;
   } catch {
-    // if decode fails, fall back to raw
     return typeof raw === "string" ? raw : undefined;
   }
 }
@@ -36,19 +70,22 @@ async function getIdFromContext(context: ContextParam): Promise<string | undefin
 export async function GET(request: Request, context: ContextParam) {
   try {
     const fileId = await getIdFromContext(context);
+    const searchParams = new URL(request.url).searchParams;
+    const optimize = searchParams.get('optimize') === 'true';
+    const width = parseInt(searchParams.get('width') || '800', 10);
+    const height = parseInt(searchParams.get('height') || '0', 10);
+    const format = searchParams.get('format') as 'webp' | 'avif' | 'png' | undefined;
 
-    // Basic validation & defensive checks
+    // Validasi ID
     if (!fileId || fileId === "undefined") {
       return NextResponse.json({ error: "File ID required" }, { status: 400 });
     }
 
-    // If you're using MongoDB ObjectId for GridFS, validate it here.
-    // If you use custom IDs, remove/adjust this check.
     if (!ObjectId.isValid(fileId)) {
       return NextResponse.json({ error: "Invalid file ID format" }, { status: 400 });
     }
 
-    // Fetch file metadata + node stream
+    // Ambil file
     const fileData = await GridFSService.getFile(fileId);
     if (!fileData) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
@@ -59,57 +96,75 @@ export async function GET(request: Request, context: ContextParam) {
       return NextResponse.json({ error: "File stream unavailable" }, { status: 404 });
     }
 
-    // ETag handling (cache validation)
-    const serverETag = file._id ? String(file._id) : undefined;
-    const clientETag = request.headers.get("if-none-match");
-    if (serverETag && clientETag && clientETag === serverETag) {
-      return new Response(null, { status: 304 });
+    // Konversi stream Node.js ke buffer
+    const chunks: Buffer[] = [];
+    for await (const chunk of nodeStream as any) {
+      chunks.push(chunk);
     }
+    const buffer = Buffer.concat(chunks);
 
-    // Abort handling — ensure we destroy stream on client disconnect
-    const onAbort = () => {
+    // Optimasi gambar jika diminta
+    let processedBuffer = buffer;
+    if (optimize) {
       try {
-        if (typeof (nodeStream as any).destroy === "function") {
-          (nodeStream as any).destroy(new Error("Client aborted"));
-        } else if (typeof (nodeStream as any).close === "function") {
-          (nodeStream as any).close();
-        }
-      } catch {
-        /* ignore */
+        processedBuffer = await optimizeImage(buffer, {
+          width: width || undefined,
+          height: height || undefined,
+          format,
+        });
+      } catch (optimizationError) {
+        console.error('Image optimization failed:', optimizationError);
+        // Fallback ke buffer asli jika optimasi gagal
       }
-    };
-
-    if (request.signal?.aborted) {
-      onAbort();
-      return new Response(null, { status: 499 }); // client closed
     }
-    request.signal?.addEventListener?.("abort", onAbort);
 
-    // Convert Node.js Readable to Web ReadableStream (Node >=17)
-    const webStream = Readable.toWeb(nodeStream as unknown as Readable);
-
-    // Prepare headers
+    // Siapkan header
     const headers = new Headers();
-    headers.set("Content-Type", (file.contentType as string) || "application/octet-stream");
-    if (typeof file.length === "number") headers.set("Content-Length", String(file.length));
-    // Prefer inline for images — change to attachment for forced download
+    headers.set("Content-Type", optimize ? `image/${format || 'webp'}` : (file.contentType as string) || "application/octet-stream");
+    headers.set("Content-Length", String(processedBuffer.length));
+    
     const safeFilename = (file.filename || file._id || "file").toString().replace(/["\\]/g, "");
     headers.set("Content-Disposition", `inline; filename="${safeFilename}"`);
     headers.set("Cache-Control", "public, max-age=31536000, immutable");
-    if (serverETag) headers.set("ETag", serverETag);
 
-    // Best-effort cleanup: remove abort listener when stream ends/errors
-    try {
-      nodeStream.on?.("close", () => request.signal?.removeEventListener?.("abort", onAbort));
-      nodeStream.on?.("end", () => request.signal?.removeEventListener?.("abort", onAbort));
-      nodeStream.on?.("error", () => request.signal?.removeEventListener?.("abort", onAbort));
-    } catch {
-      /* ignore */
-    }
+    // Konversi buffer ke ReadableStream Web
+    const webStream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(processedBuffer);
+        controller.close();
+      }
+    });
 
-    return new Response(webStream, { status: 200, headers });
+    return new Response(webStream, { 
+      status: 200, 
+      headers 
+    });
+
   } catch (err) {
     console.error("GET /api/files/:id streaming error:", err);
     return NextResponse.json({ error: "Failed to serve file" }, { status: 500 });
+  }
+}
+
+// Tambahan: Route untuk placeholder
+export async function POST(request: Request) {
+  try {
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+    
+    if (!file) {
+      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+    }
+
+    const buffer = await file.arrayBuffer();
+    const placeholderBuffer = await generatePlaceholder(Buffer.from(buffer));
+
+    return NextResponse.json({
+      placeholder: `data:image/png;base64,${placeholderBuffer.toString('base64')}`
+    });
+
+  } catch (err) {
+    console.error("Placeholder generation error:", err);
+    return NextResponse.json({ error: "Failed to generate placeholder" }, { status: 500 });
   }
 }

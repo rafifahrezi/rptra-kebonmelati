@@ -17,6 +17,11 @@ export function Navigation() {
     { href: "/kegiatan", label: "Kegiatan" },
     { href: "/berita", label: "Berita" },
     { href: "/galeri", label: "Galeri" },
+    {
+      href: "https://drive.google.com/drive/folders/11N1OmoPL5NpF52m5c1R6L6V7jdkzAWez",
+      label: "E-Perpus",
+      external: true
+    },
     { href: "/kontak", label: "Kontak Kami" },
   ];
 
@@ -33,7 +38,7 @@ export function Navigation() {
             aria-label="Beranda RPTRA BONTI"
           >
             <Image
-              src="/logo.PNG" // Adjust path as needed
+              src="/logo.PNG"
               alt="Logo RPTRA BONTI"
               width={80}
               height={80}
@@ -52,21 +57,33 @@ export function Navigation() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-6 lg:space-x-8">
             {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`relative text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
-                  pathname === item.href
+              item.external ? (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                  aria-label={item.label}
+                >
+                  {item.label}
+                </a>
+              ) : (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`relative text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${pathname === item.href
                     ? "text-green-600 font-semibold"
                     : ""
-                }`}
-                aria-current={pathname === item.href ? "page" : undefined}
-              >
-                {item.label}
-                {pathname === item.href && (
-                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600" />
-                )}
-              </Link>
+                    }`}
+                  aria-current={pathname === item.href ? "page" : undefined}
+                >
+                  {item.label}
+                  {pathname === item.href && (
+                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600" />
+                  )}
+                </Link>
+              )
             ))}
           </div>
 
@@ -90,19 +107,31 @@ export function Navigation() {
           <div className="md:hidden py-4 border-t border-gray-100">
             <div className="flex flex-col space-y-3">
               {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`block px-4 py-2.5 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-md text-sm font-medium transition-colors duration-200 ${
-                    pathname === item.href
+                item.external ? (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block px-4 py-2.5 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-md text-sm font-medium transition-colors duration-200"
+                    aria-label={item.label}
+                  >
+                    {item.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`block px-4 py-2.5 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-md text-sm font-medium transition-colors duration-200 ${pathname === item.href
                       ? "text-green-600 font-semibold bg-green-50"
                       : ""
-                  }`}
-                  onClick={handleToggleMenu}
-                  aria-current={pathname === item.href ? "page" : undefined}
-                >
-                  {item.label}
-                </Link>
+                      }`}
+                    onClick={handleToggleMenu}
+                    aria-current={pathname === item.href ? "page" : undefined}
+                  >
+                    {item.label}
+                  </Link>
+                )
               ))}
             </div>
           </div>

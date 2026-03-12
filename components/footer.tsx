@@ -86,6 +86,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="https://drive.google.com/drive/folders/11N1OmoPL5NpF52m5c1R6L6V7jdkzAWez" target="_blank" className="text-gray-300 hover:text-green-400 transition-colors">
+                  E-Perpus
+                </Link>
+              </li>
+              <li>
                 <Link href="/kontak" className="text-gray-300 hover:text-green-400 transition-colors">
                   Kontak
                 </Link>

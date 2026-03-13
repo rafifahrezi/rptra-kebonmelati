@@ -71,10 +71,14 @@ export async function GET(request: Request, context: ContextParam) {
   try {
     const fileId = await getIdFromContext(context);
     const searchParams = new URL(request.url).searchParams;
-    const optimize = searchParams.get('optimize') === 'true';
-    const width = parseInt(searchParams.get('width') || '800', 10);
-    const height = parseInt(searchParams.get('height') || '0', 10);
-    const format = searchParams.get('format') as 'webp' | 'avif' | 'png' | undefined;
+    const optimize = searchParams.get("optimize") === "true";
+    const width = parseInt(searchParams.get("width") || "800", 10);
+    const height = parseInt(searchParams.get("height") || "0", 10);
+    const format = searchParams.get("format") as
+      | "webp"
+      | "avif"
+      | "png"
+      | undefined;
 
     // Validasi ID
     if (!fileId || fileId === "undefined") {
@@ -82,7 +86,10 @@ export async function GET(request: Request, context: ContextParam) {
     }
 
     if (!ObjectId.isValid(fileId)) {
-      return NextResponse.json({ error: "Invalid file ID format" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid file ID format" },
+        { status: 400 },
+      );
     }
 
     // Ambil file
@@ -93,18 +100,24 @@ export async function GET(request: Request, context: ContextParam) {
 
     const { stream: nodeStream, file } = fileData;
     if (!nodeStream) {
-      return NextResponse.json({ error: "File stream unavailable" }, { status: 404 });
+      return NextResponse.json(
+        { error: "File stream unavailable" },
+        { status: 404 },
+      );
     }
 
-    // Konversi stream Node.js ke buffer
-    const chunks: Buffer[] = [];
+    // Konversi stream Node.js ke buffer dengan type yang benar
+    const chunks: Uint8Array[] = [];
     for await (const chunk of nodeStream as any) {
-      chunks.push(chunk);
+      chunks.push(Buffer.from(chunk));
     }
     const buffer = Buffer.concat(chunks);
 
     // Optimasi gambar jika diminta
-    let processedBuffer = buffer;
+    let processedBuffer: Buffer = buffer;
+    let contentType =
+      (file.contentType as string) || "application/octet-stream";
+
     if (optimize) {
       try {
         processedBuffer = await optimizeImage(buffer, {
@@ -112,41 +125,55 @@ export async function GET(request: Request, context: ContextParam) {
           height: height || undefined,
           format,
         });
+        contentType = `image/${format || "webp"}`;
       } catch (optimizationError) {
-        console.error('Image optimization failed:', optimizationError);
+        console.error("Image optimization failed:", optimizationError);
         // Fallback ke buffer asli jika optimasi gagal
       }
     }
 
+    // Konversi Buffer ke Uint8Array untuk Web Stream
+    const uint8Array = new Uint8Array(
+      processedBuffer.buffer,
+      processedBuffer.byteOffset,
+      processedBuffer.byteLength,
+    );
+
     // Siapkan header
     const headers = new Headers();
-    headers.set("Content-Type", optimize ? `image/${format || 'webp'}` : (file.contentType as string) || "application/octet-stream");
-    headers.set("Content-Length", String(processedBuffer.length));
-    
-    const safeFilename = (file.filename || file._id || "file").toString().replace(/["\\]/g, "");
+    headers.set("Content-Type", contentType);
+    headers.set("Content-Length", String(uint8Array.length));
+
+    const safeFilename = (file.filename || file._id || "file")
+      .toString()
+      .replace(/["\\]/g, "");
     headers.set("Content-Disposition", `inline; filename="${safeFilename}"`);
     headers.set("Cache-Control", "public, max-age=31536000, immutable");
 
-    // Konversi buffer ke ReadableStream Web
+    // Konversi ke ReadableStream Web dengan Uint8Array
     const webStream = new ReadableStream({
       start(controller) {
-        controller.enqueue(processedBuffer);
+        controller.enqueue(uint8Array);
         controller.close();
-      }
+      },
     });
 
-    return new Response(webStream, { 
-      status: 200, 
-      headers 
+    return new Response(webStream, {
+      status: 200,
+      headers,
     });
-
   } catch (err) {
     console.error("GET /api/files/:id streaming error:", err);
-    return NextResponse.json({ error: "Failed to serve file" }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: "Failed to serve file",
+        details: err instanceof Error ? err.message : String(err),
+      },
+      { status: 500 },
+    );
   }
 }
 
-// Tambahan: Route untuk placeholder
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();

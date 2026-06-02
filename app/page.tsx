@@ -9,6 +9,7 @@ import VisitsSection from "@/components/VisitsSection";
 import Calender from "@/components/admin/Calender";
 import { EventItem } from "@/types/event";
 import { getImageUrl } from "@/lib/image";
+import Image from 'next/image';
 import { normalizeAndSortEvents } from "@/lib/events";
 // Type Definitions
 interface RptraStatus {
@@ -33,6 +34,9 @@ interface HeroSlide {
   title: string;
   subtitle: string;
 }
+interface HeroSectionProps {
+  slides: HeroSlide[];
+}
 
 // StatsCard Component
 const StatsCard = memo(({ title, value, color = 'green' }: { title: string; value: number; color?: string }) => {
@@ -53,71 +57,94 @@ const StatsCard = memo(({ title, value, color = 'green' }: { title: string; valu
 });
 
 // Hero Section Component
-const HeroSection = memo(({ heroSlides }: { heroSlides: HeroSlide[] }) => {
-  const [currentSlide, setCurrentSlide] = useState(0);
+const HeroSection = memo(({ slides }: HeroSectionProps) => {
+  const [current, setCurrent] = useState(0);
+  const [touchStart, setTouchStart] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentSlide((prev: number) => (prev + 1) % heroSlides.length);
-    }, 5000);
+      setCurrent((prev) => (prev + 1) % slides.length);
+    }, 15000);
     return () => clearInterval(timer);
-  }, [heroSlides.length]);
+  }, [slides.length]);
 
-  const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-  }, [heroSlides.length]);
+  const goToSlide = useCallback(
+    (index: number) => setCurrent(index),
+    []
+  );
 
-  const prevSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
-  }, [heroSlides.length]);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const touchEnd = e.changedTouches[0].clientX;
+    if (touchStart - touchEnd > 50) {
+      setCurrent((prev) => (prev + 1) % slides.length);
+    } else if (touchEnd - touchStart > 50) {
+      setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
+    }
+  };
+
+  if (!slides.length) return null;
 
   return (
-    <section className="relative h-[600px] overflow-hidden">
-      {heroSlides.map((slide, index) => (
+    <section
+      className="relative w-full h-64 md:h-96 lg:h-screen overflow-hidden bg-gray-900"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {slides.map((slide, idx) => (
         <div
-          key={index}
-          className={`absolute inset-0 transition-opacity duration-1000 ${index === currentSlide ? 'opacity-100' : 'opacity-0'}`}
+          key={idx}
+          className={`absolute inset-0 transition-opacity duration-700 ${idx === current ? 'opacity-100' : 'opacity-0'
+            }`}
         >
-          <div
-            className="w-full h-full bg-cover bg-center"
-            style={{ backgroundImage: `url(${slide.image})` }}
-          >
-            <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-          </div>
+          <Image
+            src={slide.image}
+            alt={slide.title}
+            fill
+            className="object-cover"
+            priority={idx === 0}
+          />
+          <div className="absolute inset-0 bg-black/40" />
+
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center text-white max-w-4xl px-4">
-              <h1 className="text-4xl md:text-6xl font-bold mb-4 animate-fade-in">{slide.title}</h1>
-              <p className="text-lg md:text-xl mb-8 opacity-90">{slide.subtitle}</p>
-              <Button size="lg" className="animate-bounce-in">
-                Gabung Sekarang
-              </Button>
+            <div className="text-center text-white px-4 max-w-2xl">
+              <h1 className="text-3xl md:text-5xl font-bold mb-3">
+                {slide.title}
+              </h1>
+              <p className="text-base md:text-lg opacity-90 mb-6">
+                {slide.subtitle}
+              </p>
             </div>
           </div>
         </div>
       ))}
 
       <button
-        onClick={prevSlide}
-        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-2 rounded-full transition-all"
+        onClick={() => setCurrent((p) => (p - 1 + slides.length) % slides.length)}
+        className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition"
         aria-label="Slide sebelumnya"
       >
         <ChevronLeft className="w-6 h-6" />
       </button>
       <button
-        onClick={nextSlide}
-        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-2 rounded-full transition-all"
+        onClick={() => setCurrent((p) => (p + 1) % slides.length)}
+        className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition"
         aria-label="Slide berikutnya"
       >
         <ChevronRight className="w-6 h-6" />
       </button>
 
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-        {heroSlides.map((_, index) => (
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+        {slides.map((_, idx) => (
           <button
-            key={index}
-            onClick={() => setCurrentSlide(index)}
-            className={`w-3 h-3 rounded-full transition ${index === currentSlide ? 'bg-white' : 'bg-white bg-opacity-50'}`}
-            aria-label={`Slide ke-${index + 1}`}
+            key={idx}
+            onClick={() => goToSlide(idx)}
+            className={`w-2 h-2 rounded-full transition ${idx === current ? 'bg-white w-6' : 'bg-white/50'
+              }`}
+            aria-label={`Go to slide ${idx + 1}`}
           />
         ))}
       </div>
@@ -412,19 +439,20 @@ export default function Home() {
   // Mock data
   const heroSlides: HeroSlide[] = [
     {
-      image: 'https://images.pexels.com/photos/1094072/pexels-photo-1094072.jpeg?auto=compress&cs=tinysrgb&w=1920&h=800',
+      image: '/Welcome.JPEG',
       title: 'Selamat Datang di RPTRA',
-      subtitle: 'Tempat bermain dan belajar anak-anak Indonesia'
+      subtitle: 'Tempat bermain dan belajar anak-anak'
     },
     {
-      image: 'https://images.pexels.com/photos/1350560/pexels-photo-1350560.jpeg?auto=compress&cs=tinysrgb&w=1920&h=800',
+      image: '/Kedua.JPEG',
       title: 'Bermain & Belajar Bersama',
       subtitle: 'Fasilitas playground modern dan ruang edukasi yang aman'
     },
     {
-      image: 'https://images.pexels.com/photos/1094081/pexels-photo-1094081.jpeg?auto=compress&cs=tinysrgb&w=1920&h=800',
-      title: 'Komunitas yang Peduli',
-      subtitle: 'Bergabung dengan kegiatan komunitas yang memberdayakan keluarga'
+      image: '/Ketiga.JPEG',
+      title: '',
+      subtitle: ''
+      // Komunitas yang Peduli, Bergabung dengan kegiatan komunitas yang memberdayakan keluarga
     }
   ];
 
@@ -533,7 +561,7 @@ export default function Home() {
         }}
       />
       <div className="min-h-screen">
-        <HeroSection heroSlides={heroSlides} />
+        <HeroSection slides={heroSlides} />
 
         <RptraStatusSection rptraStatus={rptraStatus} formatDateOnly={formatDateOnly} />
 

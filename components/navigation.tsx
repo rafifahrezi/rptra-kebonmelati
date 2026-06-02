@@ -22,6 +22,11 @@ export function Navigation() {
       label: "E-Perpus",
       external: true
     },
+    {
+      href: "https://drive.google.com/drive/folders/1U9Qv_t0aKI1FILVxqtxg_HbvRuJoIPwV",
+      label: "Administrasi",
+      external: true
+    },
     { href: "/kontak", label: "Kontak Kami" },
   ];
 
@@ -29,7 +34,8 @@ export function Navigation() {
 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50 transition-shadow duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Before 7xl */}
         <div className="flex justify-between items-center py-4">
           {/* Logo and Brand */}
           <Link

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { memo, useState, useEffect, useCallback } from "react";
@@ -10,6 +9,7 @@ import { useAboutData } from '@/hooks/useAboutData';
 import {
   AboutData,
 } from '@/types/AboutData';
+import Image from "next/image";
 
 
 // Reusable Loading Component
@@ -49,13 +49,32 @@ const NoDataState = memo(() => (
 
 const getImageUrl = (imageId: string): string => `/api/files/${imageId}`;
 
-// Hero Section Component
+// Hero Section
 const HeroSection = memo(({ title, subtitle }: { title: string; subtitle: string }) => (
-  <section className="py-16 bg-gradient-to-r from-green-600 to-blue-600 text-white">
-    <div className="container mx-auto px-4">
+  <section className="relative py-16 overflow-hidden">
+    <div className="absolute inset-0 z-0">
+      <Image
+        // src="/about2.png"
+        src="#"
+        alt="RPTRA Background"
+        fill
+        className="object-cover"
+        priority
+        quality={90}
+      />
+      {/* Overlay Gradient */}
+      <div className="absolute" />
+    </div>
+
+    {/* Content */}
+    <div className="container mx-auto px-4 relative z-10">
       <div className="max-w-4xl mx-auto text-center">
-        <h1 className="text-4xl md:text-5xl font-bold mb-6">{title}</h1>
-        <p className="text-xl opacity-90 mb-8">{subtitle}</p>
+        <h1 className="text-4xl md:text-5xl font-bold mb-6 text-white drop-shadow-lg">
+          {title}
+        </h1>
+        <p className="text-xl opacity-90 mb-8 text-white drop-shadow-md">
+          {subtitle}
+        </p>
       </div>
     </div>
   </section>
@@ -171,7 +190,6 @@ const MissionVisionSection = memo(
     </section>
   )
 );
-
 
 // Programs Section Component
 const ProgramsSection = memo(({ programs }: { programs: AboutData["programs"] }) => {

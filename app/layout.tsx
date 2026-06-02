@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   creator: 'rptrabonti',
   keywords: "RPTRA, Kebon Melati, Jakarta, ruang publik, ramah anak, komunitas",
   alternates: {
-    canonical: 'https://rptrabonti.com',
+    canonical: 'https://www.rptrabonti.com',
   },
   robots: {
     index: true,
@@ -31,8 +31,8 @@ const jsonLd = {
   "@type": "Organization",
   name: "RPTRA Kebon Melati",
   alternateName: "rptrabonti",
-  url: "https://rptrabonti.com",
-  logo: "https://rptrabonti.com/logo-bonti.gif",
+  url: "https://www.rptrabonti.com",
+  logo: "https://www.rptrabonti.com/logo-bonti.gif",
   sameAs: [
     "https://www.instagram.com/rptrabonti",
   ],

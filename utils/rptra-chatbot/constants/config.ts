@@ -1,0 +1,9 @@
+export const CHATBOT_CONFIG = {
+  GENERATION_MODEL: 'openai/gpt-oss-20b',
+  EMBEDDING_MODEL: 'voyage-multilingual-2',
+  MAX_MEMORY_MESSAGES: 10,
+  CHUNK_SIZE: 512,
+  CHUNK_OVERLAP: 50,
+  VECTOR_SEARCH_LIMIT: 3,
+  SIMILARITY_THRESHOLD: 0.0
+};

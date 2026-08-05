@@ -8,7 +8,7 @@ import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { Suspense } from "react"
 import { Toaster } from "@/components/ui/toaster";
-
+import { ChatWidget } from "@/components/chatbot/ChatWidget";
 export const metadata: Metadata = {
   title: "RPTRA Kebon Melati - Ruang Publik Terpadu Ramah Anak",
   description:
@@ -63,6 +63,7 @@ export default function RootLayout({
           <main className="min-h-screen">{children}</main>
           <Footer />
           <Toaster />
+          <ChatWidget />
         </Suspense>
         <Analytics />
       </body>

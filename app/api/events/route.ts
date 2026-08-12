@@ -14,6 +14,9 @@ export async function GET() {
   }
 }
 
+import mongoose from "mongoose";
+import { syncToKnowledgeBase } from "@/services/api/syncService";
+
 export async function POST(request: Request) {
   try {
     await dbConnect();
@@ -32,11 +35,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "images harus array ID GridFS yang valid" }, { status: 400 });
     }
 
-    // Simpan event dengan images sebagai array ID
-    const event = new Event(data);
-    await event.save();
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    return NextResponse.json(event, { status: 201 });
+    try {
+      // Simpan event dengan images sebagai array ID
+      const event = new Event(data);
+      await event.save({ session });
+
+      const content = `Kegiatan ${event.title} berlokasi di ${event.location} pada ${event.date} ${event.time}. Deskripsi: ${event.description || ''}`;
+
+      await syncToKnowledgeBase(
+        event._id.toString(),
+        'Event',
+        event.title,
+        content,
+        session
+      );
+
+      await session.commitTransaction();
+      session.endSession();
+
+      return NextResponse.json(event, { status: 201 });
+    } catch (txError) {
+      await session.abortTransaction();
+      session.endSession();
+      throw txError;
+    }
   } catch (error) {
     console.error("Error creating event:", error);
     return NextResponse.json({ error: "Gagal membuat event" }, { status: 500 });

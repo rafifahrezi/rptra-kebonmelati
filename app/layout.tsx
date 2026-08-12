@@ -8,7 +8,7 @@ import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { Suspense } from "react"
 import { Toaster } from "@/components/ui/toaster";
-
+import { ChatWidget } from "@/components/chatbot/ChatWidget";
 export const metadata: Metadata = {
   title: "RPTRA Kebon Melati - Ruang Publik Terpadu Ramah Anak",
   description:
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   creator: 'rptrabonti',
   keywords: "RPTRA, Kebon Melati, Jakarta, ruang publik, ramah anak, komunitas",
   alternates: {
-    canonical: 'https://www.rptrabonti.com',
+    canonical: 'https://rptrabonti.com',
   },
   robots: {
     index: true,
@@ -31,8 +31,8 @@ const jsonLd = {
   "@type": "Organization",
   name: "RPTRA Kebon Melati",
   alternateName: "rptrabonti",
-  url: "https://www.rptrabonti.com",
-  logo: "https://www.rptrabonti.com/logo-bonti.gif",
+  url: "https://rptrabonti.com",
+  logo: "https://rptrabonti.com/logo-bonti.gif",
   sameAs: [
     "https://www.instagram.com/rptrabonti",
   ],
@@ -63,6 +63,7 @@ export default function RootLayout({
           <main className="min-h-screen">{children}</main>
           <Footer />
           <Toaster />
+          <ChatWidget />
         </Suspense>
         <Analytics />
       </body>

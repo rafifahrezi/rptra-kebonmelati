@@ -47,6 +47,9 @@ export async function GET(request: Request, context: any) {
   }
 }
 
+import mongoose from 'mongoose';
+import { syncToKnowledgeBase, removeFromKnowledgeBase } from '@/services/api/syncService';
+
 /* ------------------------------
    PUT /api/events/:id
    ------------------------------ */
@@ -68,17 +71,41 @@ export async function PUT(request: Request, context: any) {
 
     await dbConnect();
 
-    const updated = await Event.findByIdAndUpdate(
-      id,
-      { $set: { ...data, updatedAt: new Date() } },
-      { new: true, runValidators: true }
-    ).lean();
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    if (!updated) {
-      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    try {
+      const updated = await Event.findByIdAndUpdate(
+        id,
+        { $set: { ...data, updatedAt: new Date() } },
+        { new: true, runValidators: true, session }
+      ).lean();
+
+      if (!updated) {
+        await session.abortTransaction();
+        session.endSession();
+        return NextResponse.json({ error: "Event not found" }, { status: 404 });
+      }
+
+      const content = `Kegiatan ${updated.title} berlokasi di ${updated.location} pada ${updated.date} ${updated.time}. Deskripsi: ${updated.description || ''}`;
+
+      await syncToKnowledgeBase(
+        updated._id.toString(),
+        'Event',
+        updated.title,
+        content,
+        session
+      );
+
+      await session.commitTransaction();
+      session.endSession();
+
+      return NextResponse.json(updated, { status: 200 });
+    } catch (txError) {
+      await session.abortTransaction();
+      session.endSession();
+      throw txError;
     }
-
-    return NextResponse.json(updated, { status: 200 });
   } catch (err) {
     console.error("PUT /api/events/:id error:", err);
     return NextResponse.json({ error: "Failed to update event" }, { status: 500 });
@@ -101,14 +128,31 @@ export async function DELETE(request: Request, context: any) {
 
     await dbConnect();
 
-    const deleted = await Event.findByIdAndDelete(id).lean();
-    if (!deleted) {
-      return NextResponse.json({ error: "Event not found" }, { status: 404 });
-    }
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    return NextResponse.json({ message: "Event deleted" }, { status: 200 });
+    try {
+      const deleted = await Event.findByIdAndDelete(id, { session }).lean();
+      if (!deleted) {
+        await session.abortTransaction();
+        session.endSession();
+        return NextResponse.json({ error: "Event not found" }, { status: 404 });
+      }
+
+      await removeFromKnowledgeBase(id, session);
+
+      await session.commitTransaction();
+      session.endSession();
+
+      return NextResponse.json({ message: "Event deleted" }, { status: 200 });
+    } catch (txError) {
+      await session.abortTransaction();
+      session.endSession();
+      throw txError;
+    }
   } catch (err) {
     console.error("DELETE /api/events/:id error:", err);
     return NextResponse.json({ error: "Failed to delete event" }, { status: 500 });
   }
 }
+

@@ -32,6 +32,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
+import mongoose from "mongoose";
+import { syncToKnowledgeBase } from "@/services/api/syncService";
+
 export async function POST(request: NextRequest) {
   try {
     const token = request.cookies.get("admin-token")?.value;
@@ -44,20 +47,44 @@ export async function POST(request: NextRequest) {
     const { status, updatedBy, updatedByEmail } = await request.json();
     await connectDB();
 
-    const operasional = await Operasional.findById("current");
-    if (!operasional) {
-      return NextResponse.json({ message: "Operasional status tidak ditemukan" }, { status: 404 });
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const operasional = await Operasional.findById("current");
+      if (!operasional) {
+        await session.abortTransaction();
+        session.endSession();
+        return NextResponse.json({ message: "Operasional status tidak ditemukan" }, { status: 404 });
+      }
+
+      operasional.status = status;
+      operasional.updatedAt = new Date();
+      operasional.updatedBy = updatedBy || "Sistem";
+      operasional.updatedByEmail = updatedByEmail || "system@local";
+
+      await operasional.save({ session });
+
+      const content = `Status Operasional RPTRA saat ini adalah: ${status ? 'BUKA / BEROPERASI' : 'TUTUP / TIDAK BEROPERASI'}. (Diperbarui pada ${operasional.updatedAt})`;
+
+      await syncToKnowledgeBase(
+        "current",
+        "Operasional",
+        "Status Operasional RPTRA",
+        content,
+        session
+      );
+
+      await session.commitTransaction();
+      session.endSession();
+
+      // return langsung object
+      return NextResponse.json(operasional);
+    } catch (txError) {
+      await session.abortTransaction();
+      session.endSession();
+      throw txError;
     }
-
-    operasional.status = status;
-    operasional.updatedAt = new Date();
-    operasional.updatedBy = updatedBy || "Sistem";
-    operasional.updatedByEmail = updatedByEmail || "system@local";
-
-    await operasional.save();
-
-    // return langsung object
-    return NextResponse.json(operasional);
   } catch (error) {
     console.error("POST operasional error:", error);
     return NextResponse.json({ message: "Terjadi kesalahan server" }, { status: 500 });

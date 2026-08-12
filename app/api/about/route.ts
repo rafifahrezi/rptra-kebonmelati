@@ -84,6 +84,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
+import { syncToKnowledgeBase } from "@/services/api/syncService";
+
 export async function POST(request: Request) {
   try {
     await connectDB();
@@ -190,35 +192,67 @@ export async function POST(request: Request) {
       }
     }
 
-    // Perbarui atau buat dokumen
-    const about = await About.findByIdAndUpdate(
-      "main",
-      {
-        ...data,
-        facilities: {
-          ...data.facilities,
-          images: data.facilities.images 
-            ? data.facilities.images.map((id: string) => new mongoose.Types.ObjectId(id)) 
-            : [],
-        },
-        mission: {
-          ...data.mission,
-          image: data.mission?.image || '',
-        },
-        vision: {
-          ...data.vision,
-          image: data.vision?.image || '',
-        },
-        lastUpdated: new Date().toISOString(),
-      },
-      { 
-        upsert: true, 
-        new: true, 
-        runValidators: true 
-      }
-    );
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    return NextResponse.json(about, { status: 201 });
+    try {
+      // Perbarui atau buat dokumen
+      const about = await About.findByIdAndUpdate(
+        "main",
+        {
+          ...data,
+          facilities: {
+            ...data.facilities,
+            images: data.facilities.images 
+              ? data.facilities.images.map((id: string) => new mongoose.Types.ObjectId(id)) 
+              : [],
+          },
+          mission: {
+            ...data.mission,
+            image: data.mission?.image || '',
+          },
+          vision: {
+            ...data.vision,
+            image: data.vision?.image || '',
+          },
+          lastUpdated: new Date().toISOString(),
+        },
+        { 
+          upsert: true, 
+          new: true, 
+          runValidators: true,
+          session
+        }
+      );
+
+      const aboutContent = `
+        TENTANG RPTRA: ${about.title}
+        ${about.subtitle}
+        Misi: ${about.mission?.description}
+        Visi: ${about.vision?.description}
+        Nilai-Nilai: ${about.values?.description}
+        Program Tersedia: ${(about.programs?.items || []).map((p: any) => `${p.name} (${p.description})`).join(', ')}
+        Jam Operasional: Senin (${about.operational?.hours?.senin}), Minggu (${about.operational?.hours?.minggu})
+        Fasilitas: ${(about.facilities?.items || []).map((f: any) => `${f.name} (${f.description})`).join(', ')}
+      `.trim();
+
+      await syncToKnowledgeBase(
+        "main",
+        'About',
+        'Informasi Umum RPTRA',
+        aboutContent,
+        session
+      );
+
+      await session.commitTransaction();
+      session.endSession();
+
+      return NextResponse.json(about, { status: 201 });
+    } catch (txError) {
+      await session.abortTransaction();
+      session.endSession();
+      throw txError;
+    }
   } catch (error) {
     console.error("Error creating/updating about:", error);
     return NextResponse.json({ 

@@ -8,9 +8,16 @@ import moment from 'moment';
 import 'moment/locale/id';
 
 export const processRAGQuery = async (query: string, sessionId: string) => {
-  // 1. Generate query embedding
-  const queryEmbedding = await generateEmbedding(query);
+  // 1. Heuristic Query Expansion (Best Practice untuk kueri implisit)
+  // Jika user bertanya "besok buka jam berapa?", model embedding mungkin tidak tahu
+  // subjek utamanya. Kita tambahkan subjek secara implisit untuk memperkuat Vector Search.
+  let searchQuery = query;
+  if (!/rptra/i.test(searchQuery)) {
+    searchQuery = `${searchQuery} RPTRA Kebon Melati`;
+  }
 
+  // 2. Generate query embedding
+  const queryEmbedding = await generateEmbedding(searchQuery);
   // 2. Retrieve Top Documents using Vector Search
   const topDocs = await searchRelevantDocuments(queryEmbedding);
 
@@ -23,12 +30,16 @@ export const processRAGQuery = async (query: string, sessionId: string) => {
   let contextText = "";
 
   // 4a. Real-time Event Injection for temporal queries
-  const eventKeywords = /acara|kegiatan|event|jadwal|minggu ini|bulan ini|hari ini|besok|lusa/i;
+  const eventKeywords =
+    /acara|kegiatan|event|jadwal|minggu ini|bulan ini|hari ini|besok|lusa/i;
   if (eventKeywords.test(query)) {
     try {
-      const upcomingEvents = await Event.find({ 
-        status: { $in: ["upcoming", "ongoing"] } 
-      }).sort({ date: 1 }).limit(5).lean();
+      const upcomingEvents = await Event.find({
+        status: { $in: ["upcoming", "ongoing"] },
+      })
+        .sort({ date: 1 })
+        .limit(5)
+        .lean();
 
       if (upcomingEvents.length > 0) {
         contextText += "[DATA ACARA TERKINI DARI DATABASE]:\n";
@@ -48,22 +59,24 @@ export const processRAGQuery = async (query: string, sessionId: string) => {
   // 5. Get conversation history
   const history = await getConversationHistory(sessionId);
   const historyText = history
-    .map(msg => `${msg.role === 'user' ? 'User' : 'RPTRA Assistant'}: ${msg.message}`)
-    .join('\n');
+    .map(
+      (msg) =>
+        `${msg.role === "user" ? "User" : "RPTRA Assistant"}: ${msg.message}`,
+    )
+    .join("\n");
 
   // 6. Construct final user prompt
-  moment.locale('id');
-  const currentDate = moment().format('dddd, D MMMM YYYY, HH:mm');
+  moment.locale("id");
+  const currentDate = moment().format("dddd, D MMMM YYYY, HH:mm");
 
-  const userPrompt = USER_PROMPT_TEMPLATE
-    .replace('{current_date}', currentDate)
-    .replace('{retrieved_context}', contextText.trim())
-    .replace('{conversation_history}', historyText)
-    .replace('{user_query}', query);
+  const userPrompt = USER_PROMPT_TEMPLATE.replace("{current_date}", currentDate)
+    .replace("{retrieved_context}", contextText.trim())
+    .replace("{conversation_history}", historyText)
+    .replace("{user_query}", query);
 
   // 7. Generate response from Groq
   const answer = await generateContent(SYSTEM_PROMPT, userPrompt);
 
   return answer;
-};
+};;
 

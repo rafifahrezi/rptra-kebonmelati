@@ -32,25 +32,38 @@ export const processRAGQuery = async (query: string, sessionId: string) => {
   // 4a. Real-time Event Injection for temporal queries
   const eventKeywords =
     /acara|kegiatan|event|jadwal|minggu ini|bulan ini|hari ini|besok|lusa/i;
+  let hasInjectedEvents = false;
   if (eventKeywords.test(query)) {
     try {
       const upcomingEvents = await Event.find({
         status: { $in: ["upcoming", "ongoing"] },
       })
         .sort({ date: 1 })
-        .limit(5)
+        .limit(15)
         .lean();
 
       if (upcomingEvents.length > 0) {
         contextText += "[DATA ACARA TERKINI DARI DATABASE]:\n";
         upcomingEvents.forEach((ev: any) => {
-          contextText += `- Acara: ${ev.title}\n  Tanggal: ${ev.date}, Jam: ${ev.time}\n  Lokasi: ${ev.location}\n  Status: ${ev.status}\n  Deskripsi: ${ev.description}\n\n`;
+          // Format date automatically so the LLM easily matches it with 'hari ini'
+          const formattedDate = moment(ev.date).isValid()
+            ? moment(ev.date).format("dddd, D MMMM YYYY")
+            : ev.date;
+          contextText += `- Acara: ${ev.title}\n  Tanggal: ${formattedDate}, Jam: ${ev.time}\n  Lokasi: ${ev.location}\n  Status: ${ev.status}\n  Deskripsi: ${ev.description}\n\n`;
         });
+        hasInjectedEvents = true;
       }
     } catch (err) {
       console.error("Gagal mengambil data acara terkini:", err);
     }
   }
+
+  // 4b. Format the vector search documents (Knowledge Base)
+  let docContext = "";
+  topDocs.forEach((doc: any, index: number) => {
+    docContext += `[Dokumen Pengetahuan Umum ${index + 1} - ${doc.title} (Relevansi: ${doc.score?.toFixed(2) || "N/A"})]\n${doc.content}\n\n`;
+  });
+
 
   topDocs.forEach((doc: any, index: number) => {
     contextText += `[Dokumen ${index + 1} - ${doc.title}]\n${doc.content}\n\n`;
@@ -78,5 +91,4 @@ export const processRAGQuery = async (query: string, sessionId: string) => {
   const answer = await generateContent(SYSTEM_PROMPT, userPrompt);
 
   return answer;
-};;
-
+};

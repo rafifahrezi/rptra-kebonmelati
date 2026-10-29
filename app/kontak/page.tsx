@@ -232,8 +232,7 @@ export default function ContactPage() {
                   <Phone className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-medium">Telepon</p>
-                    <p className="text-sm text-muted-foreground">(021) 123-4567</p>
-                    <p className="text-sm text-muted-foreground">+62 812-3456-7890</p>
+                    <p className="text-sm text-muted-foreground">085280059449</p>
                   </div>
                 </div>
 
@@ -241,8 +240,7 @@ export default function ContactPage() {
                   <Mail className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-medium">Email</p>
-                    <p className="text-sm text-muted-foreground">info@rptrakebonmelati.id</p>
-                    <p className="text-sm text-muted-foreground">admin@rptrakebonmelati.id</p>
+                    <p className="text-sm text-muted-foreground">rptrabonti179@gmail.com</p>
                   </div>
                 </div>
               </CardContent>

@@ -6,6 +6,9 @@ import { Edit2, X, ChevronDown, Plus, Trash2, ArrowLeft, Info, Upload, Eye, Save
 import Link from "next/link";
 import AdminLoading from "@/app/admin/loading";
 import MarkdownEditor from "./_components/MarkdownEditor"; // sesuaikan path
+import GambaranUmumSection from "./_components/GambaranUmumSection";
+import PegawaiSection from "./_components/PegawaiSection";
+import TugasFungsiSection from "./_components/TugasFungsiSection";
 
 // ================= Types =================
 interface FacilityItem {
@@ -426,6 +429,9 @@ const AboutAdminPage = () => {
   const [snackbar, setSnackbar] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [openSections, setOpenSections] = useState({
     hero: true,
+    gambaranUmum: false, // <- baru
+    pegawai: false, // <- baru
+    tugasFungsi: false, // <- baru
     mission: false,
     vision: false,
     values: false,
@@ -669,7 +675,18 @@ const AboutAdminPage = () => {
             </button>
           </div>
         </div>
-
+        {/* Gambaran Umum */}
+        <AccordionSection title="Gambaran Umum" isOpen={openSections.gambaranUmum} toggleOpen={() => toggleSection("gambaranUmum")}>
+          <GambaranUmumSection />
+        </AccordionSection>
+        {/* Pegawai */}
+        <AccordionSection title="Pegawai" isOpen={openSections.pegawai} toggleOpen={() => toggleSection("pegawai")}>
+          <PegawaiSection />
+        </AccordionSection>
+        {/* Tugas & Fungsi */}
+        <AccordionSection title="Tugas & Fungsi" isOpen={openSections.tugasFungsi} toggleOpen={() => toggleSection("tugasFungsi")}>
+          <TugasFungsiSection />
+        </AccordionSection>
         {/* Hero Section */}
         <AccordionSection title="Hero Section" isOpen={openSections.hero} toggleOpen={() => toggleSection("hero")}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

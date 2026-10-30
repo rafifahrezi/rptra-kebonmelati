@@ -152,25 +152,80 @@ const HeroSection = memo(({ slides }: HeroSectionProps) => {
   );
 });
 
+/* RPTRA Status */
+// Dibuat sekali di level modul, bukan di setiap render. Zona waktu dikunci ke WIB supaya sama di semua perangkat.
+const TZ = "Asia/Jakarta";
+const dateFmt = new Intl.DateTimeFormat("id-ID", {
+  weekday: "short", // DDD -> "Sen"
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+  timeZone: TZ,
+});
+const timeFmt = new Intl.DateTimeFormat("en-GB", {
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+  timeZone: TZ,
+}); // en-GB dipakai karena id-ID memakai titik ("14.05.09"), en-GB memakai titik dua ("14:05:09")
+
+function formatUpdatedAt(iso: string | null) {
+  const d = iso ? new Date(iso) : null;
+  if (!d || Number.isNaN(d.getTime())) return null;
+  return { date: dateFmt.format(d), time: `${timeFmt.format(d)} WIB`, iso: d.toISOString() };
+}
+
 // RptraStatus Section
-const RptraStatusSection = memo(({ rptraStatus, formatDateOnly }: { rptraStatus: RptraStatus | null; formatDateOnly: (dateString: string | null) => string }) => (
-  <section className="py-8 bg-gray-50">
-    <div className="container mx-auto px-4 text-center">
-      {rptraStatus === null ? (
-        <span className="px-4 py-2 bg-gray-200 text-gray-700 rounded-full">Memuat status...</span>
-      ) : (
-        <div className="inline-block px-4 py-2 rounded-full font-semibold bg-white shadow-md">
-          <span className={`px-3 py-1 rounded-full ${rptraStatus.status ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-            {rptraStatus.status ? 'Sedang Buka' : 'Sedang Tutup'}
+const RptraStatusSection = memo(({ rptraStatus }: { rptraStatus: RptraStatus | null }) => {
+  const updated = formatUpdatedAt(rptraStatus?.updatedAt ?? null);
+
+  return (
+    <section className="py-8 bg-gray-50">
+      <div className="container mx-auto px-4 text-center">
+        {rptraStatus === null ? (
+          <span className="px-4 py-2 bg-gray-200 text-gray-700 rounded-full" role="status">
+            Memuat status...
           </span>
-          <div className="text-sm text-gray-600 mt-1 flex flex-col sm:flex-row gap-2 justify-center items-center">
-            <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {formatDateOnly(rptraStatus.updatedAt)}</span>
+        ) : (
+          <div
+            role="status"
+            aria-live="polite"
+            className="inline-block px-4 py-3 rounded-2xl font-semibold bg-white shadow-md"
+          >
+            <span
+              className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${rptraStatus.status ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                }`}
+            >
+              <span
+                aria-hidden="true"
+                className={`w-2 h-2 rounded-full ${rptraStatus.status ? "bg-green-500" : "bg-red-500"}`}
+              />
+              {rptraStatus.status ? "Sedang Buka" : "Sedang Tutup"}
+            </span>
+
+            <div className="mt-2 text-sm font-normal text-gray-600 flex flex-col sm:flex-row gap-x-4 gap-y-1 justify-center items-center">
+              {updated ? (
+                <>
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" aria-hidden="true" />
+                    <time dateTime={updated.iso}>{updated.date}</time>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" aria-hidden="true" />
+                    <time dateTime={updated.iso}>{updated.time}</time>
+                  </span>
+                </>
+              ) : (
+                <span>Belum ada pembaruan</span>
+              )}
+            </div>
           </div>
-        </div>
-      )}
-    </div>
-  </section>
-));
+        )}
+      </div>
+    </section>
+  );
+});
 
 // About Section
 const AboutSection = memo(() => (
@@ -184,7 +239,7 @@ const AboutSection = memo(() => (
           RPTRA adalah Ruang Publik Terpadu Ramah Anak yang berfungsi sebagai tempat bermain, belajar, dan beraktivitas sosial untuk keluarga.
         </p>
         <Link href="/about">
-          <Button variant="outline" size="lg">
+          <Button variant="default" size="lg">
             Selengkapnya
           </Button>
         </Link>
@@ -203,7 +258,7 @@ const FeaturesSection = memo(({ features }: { features: { icon: React.ElementTyp
             key={index}
             className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
           >
-            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center mb-4">
+            <div className="w-12 h-12 bg-linear-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center mb-4">
               <feature.icon className="w-6 h-6 text-white" />
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -305,11 +360,11 @@ const EventsSection = memo(() => {
             <div key={event._id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
               <div className="h-48 relative">
                 <img
-                  src={event.images[0] ? getImageUrl(event.images[0]) : "/placeholder-image.jpg"}
+                  src={event.images[0] ? getImageUrl(event.images[0]) : ""}
                   alt={event.title}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    e.currentTarget.src = "/placeholder-image.jpg";
+                    e.currentTarget.src = "";
                   }}
                 />
               </div>
@@ -401,7 +456,7 @@ const LocationSection = memo(() => (
 
 // CTA Section
 const CtaSection = memo(() => (
-  <section className="py-16 bg-gradient-to-r from-green-600 to-blue-600 text-white">
+  <section className="py-16 bg-linear-to-r from-green-600 to-blue-600 text-white">
     <div className="container mx-auto px-4 text-center">
       <h2 className="text-3xl md:text-4xl font-bold mb-4">
         Bergabunglah dengan Komunitas Kami
@@ -413,7 +468,7 @@ const CtaSection = memo(() => (
         <Link href="/events">
           <Button
             size="lg"
-            className="bg-gradient-to-r from-green-600 to-teal-600 text-white font-semibold shadow-md hover:shadow-lg hover:from-green-700 hover:to-teal-700 transition-all duration-200 rounded-lg px-6 py-3 transform hover:scale-105"
+            className="bg-linear-to-r from-green-600 to-teal-600 text-white font-semibold shadow-md hover:shadow-lg hover:from-green-700 hover:to-teal-700 transition-all duration-200 rounded-lg px-6 py-3 transform hover:scale-105"
           >
             Lihat Kegiatan
           </Button>
